@@ -1,61 +1,50 @@
+import React from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
-import { useEffect } from 'react';
-import { errorReporter } from '@/lib/errorReporter';
-import { ErrorFallback } from './ErrorFallback';
-
+import { Button } from '@/components/ui/button';
 export function RouteErrorBoundary() {
-  const error = useRouteError();
-
-  useEffect(() => {
-    // Report the route error
-    if (error) {
-      let errorMessage = 'Unknown route error';
-      let errorStack = '';
-
-      if (isRouteErrorResponse(error)) {
-        errorMessage = `Route Error ${error.status}: ${error.statusText}`;
-        if (error.data) {
-          errorMessage += ` - ${JSON.stringify(error.data)}`;
-        }
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-        errorStack = error.stack || '';
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = JSON.stringify(error);
-      }
-
-      errorReporter.report({
-        message: errorMessage,
-        stack: errorStack,
-        url: window.location.href,
-        timestamp: new Date().toISOString(),
-        source: 'react-router',
-        error: error,
-        level: "error",
-      });
-    }
-  }, [error]);
-
-  // Render error UI using shared ErrorFallback component
-  if (isRouteErrorResponse(error)) {
-    return (
-      <ErrorFallback
-        title={`${error.status} ${error.statusText}`}
-        message="Sorry, an error occurred while loading this page."
-        error={error.data ? { message: JSON.stringify(error.data, null, 2) } : error}
-        statusMessage="Navigation error detected"
-      />
-    );
+  // Safely attempt to get the error
+  let error: unknown;
+  try {
+    error = useRouteError();
+  } catch (e) {
+    // Fallback if useRouteError fails (e.g. outside context)
+    error = e;
   }
-
+  console.error('Route Error:', error);
+  let title = 'Something went wrong';
+  let message = 'An unexpected error occurred.';
+  if (isRouteErrorResponse(error)) {
+    if (error.status === 404) {
+      title = 'Page Not Found';
+      message = "We couldn't find the page you were looking for.";
+    } else if (error.status === 401) {
+      title = 'Unauthorized';
+      message = 'You do not have permission to view this page.';
+    } else if (error.status === 503) {
+      title = 'Service Unavailable';
+      message = 'Our servers are currently unavailable. Please try again later.';
+    } else {
+      message = error.statusText || message;
+    }
+  } else if (error instanceof Error) {
+    message = error.message;
+  }
   return (
-    <ErrorFallback
-      title="Unexpected Error"
-      message="An unexpected error occurred while loading this page."
-      error={error}
-      statusMessage="Routing error detected"
-    />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="max-w-md w-full text-center space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">{title}</h1>
+          <p className="text-muted-foreground">{message}</p>
+        </div>
+        <div className="flex justify-center gap-4">
+          <Button onClick={() => window.location.reload()} variant="default">
+            Reload Page
+          </Button>
+          <Button onClick={() => window.location.href = '/'} variant="outline">
+            Go Home
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

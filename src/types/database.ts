@@ -86,7 +86,7 @@ export interface ProfileInsert {
   created_at?: string;
   updated_at?: string;
 }
-export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at'>>;
+export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
 // --- Tasks ---
 export type TaskType = 'offer' | 'request';
 export type TaskMode = 'online' | 'in_person' | 'hybrid';
@@ -142,7 +142,7 @@ export interface TaskInsert {
   created_at?: string;
   updated_at?: string;
 }
-export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at'>>;
+export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at' | 'updated_at'>>;
 // --- Escrows ---
 export type EscrowStatus = 'locked' | 'released' | 'refunded' | 'disputed';
 export interface Escrow {

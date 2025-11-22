@@ -18,6 +18,8 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase, checkSupabaseEnv } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { ProfileInsert } from '@/types/database';
+import { Skeleton } from '@/components/ui/skeleton';
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -61,13 +63,41 @@ export function RegisterPage() {
       });
       if (signUpError) throw signUpError;
       if (authData.user) {
-        // Profile creation is handled by Supabase Trigger (handle_new_user)
-        // We don't need to manually insert unless the trigger fails or is missing
-        // For robustness in demo/sandbox where triggers might not run, we can try a manual insert
-        // but ignore "duplicate key" errors.
-        // Note: In a real production app with triggers, we skip this.
-        // Here we do a "best effort" check or just rely on the trigger.
-        toast.success('Account created! Profile setup via system trigger.');
+        // Check if profile exists (trigger might have created it)
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', authData.user.id)
+          .single();
+        if (!existingProfile) {
+          // Fallback: Create profile manually if trigger failed
+          const profileData: ProfileInsert = {
+            id: authData.user.id,
+            email: data.email,
+            display_name: data.name,
+            is_approved: false,
+            credits: 0,
+            locked_credits: 0,
+            reputation_score: 0,
+            completed_tasks_count: 0,
+            is_suspended: false,
+            kyc_level: 0,
+            skills: [],
+            bio: null
+          };
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([profileData]);
+          if (profileError) {
+            console.error('Profile creation fallback failed:', profileError);
+            // Don't block success if auth worked, but warn
+            toast.warning('Account created but profile setup incomplete. Please contact support.');
+          } else {
+            toast.success('Profile created successfully!');
+          }
+        } else {
+          toast.success('Account created! Profile setup via system trigger.');
+        }
       }
       setSuccess(true);
     } catch (err) {
@@ -154,76 +184,79 @@ export function RegisterPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white mt-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    'Sign Up'
-                  )}
-                </Button>
-              </form>
-            </Form>
+            {isLoading ? (
+               <div className="space-y-4">
+                 <Skeleton className="h-10 w-full" />
+                 <Skeleton className="h-10 w-full" />
+                 <Skeleton className="h-10 w-full" />
+                 <Skeleton className="h-10 w-full" />
+                 <Skeleton className="h-10 w-full" />
+               </div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white mt-2"
+                    disabled={isLoading}
+                  >
+                    Sign Up
+                  </Button>
+                </form>
+              </Form>
+            )}
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Already have an account?{' '}
