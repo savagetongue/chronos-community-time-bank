@@ -9,6 +9,8 @@ CREATE TYPE escrow_status AS ENUM ('locked', 'released', 'refunded', 'disputed')
 CREATE TYPE dispute_reason AS ENUM ('not_completed', 'no_show', 'poor_quality', 'safety', 'fraud', 'unauthorized_recording', 'other');
 CREATE TYPE dispute_status AS ENUM ('open', 'admin_reviewed', 'resolved');
 CREATE TYPE transaction_type AS ENUM ('lock', 'release', 'refund', 'admin_adjust');
+-- SAFETY DROP: Remove is_admin if it exists from previous migrations
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS is_admin;
 -- PROFILES TABLE
 CREATE TABLE public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,

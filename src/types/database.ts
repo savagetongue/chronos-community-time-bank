@@ -5,7 +5,7 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[];
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -111,7 +111,8 @@ export interface Database {
   };
 }
 // --- Profiles ---
-export interface Profile {
+// Note: No is_admin field; admin access uses hardcoded email check.
+export type Profile = {
   id: string;
   display_name: string | null;
   email: string;
@@ -149,7 +150,7 @@ export type TaskType = 'offer' | 'request';
 export type TaskMode = 'online' | 'in_person' | 'hybrid';
 export type TaskStatus = 'open' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskVisibility = 'public' | 'private';
-export interface Task {
+export type Task = {
   id: string;
   creator_id: string;
   type: TaskType;
@@ -202,7 +203,7 @@ export type TaskInsert = {
 export type TaskUpdate = Partial<TaskInsert>;
 // --- Escrows ---
 export type EscrowStatus = 'locked' | 'released' | 'refunded' | 'disputed';
-export interface Escrow {
+export type Escrow = {
   id: string;
   task_id: string;
   requester_id: string;
@@ -234,7 +235,7 @@ export type EscrowInsert = {
 };
 export type EscrowUpdate = Partial<EscrowInsert>;
 // --- Reviews ---
-export interface Review {
+export type Review = {
   id: string;
   task_id: string;
   reviewer_id: string;
@@ -266,7 +267,7 @@ export type ReviewUpdate = Partial<ReviewInsert>;
 // --- Disputes ---
 export type DisputeReason = 'not_completed' | 'no_show' | 'poor_quality' | 'safety' | 'fraud' | 'unauthorized_recording' | 'other';
 export type DisputeStatus = 'open' | 'admin_reviewed' | 'resolved';
-export interface Dispute {
+export type Dispute = {
   id: string;
   escrow_id: string;
   raised_by: string;
@@ -299,7 +300,7 @@ export type DisputeInsert = {
 export type DisputeUpdate = Partial<DisputeInsert>;
 // --- Transactions ---
 export type TransactionType = 'lock' | 'release' | 'refund' | 'admin_adjust';
-export interface Transaction {
+export type Transaction = {
   id: string;
   user_id: string;
   type: TransactionType;
@@ -325,7 +326,7 @@ export type TransactionInsert = {
 };
 export type TransactionUpdate = Partial<TransactionInsert>;
 // --- Notifications ---
-export interface Notification {
+export type Notification = {
   id: string;
   user_id: string;
   type: string;
@@ -343,7 +344,7 @@ export type NotificationInsert = {
 };
 export type NotificationUpdate = Partial<NotificationInsert>;
 // --- Files ---
-export interface FileRecord {
+export type FileRecord = {
   id: string;
   owner_id: string;
   bucket: string;
