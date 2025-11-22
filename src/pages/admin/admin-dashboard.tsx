@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Users, AlertTriangle, Activity, Download, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,7 +21,7 @@ export function AdminDashboard() {
   }, [refetch]);
   const handleDownloadZip = async () => {
     setIsZipping(true);
-    const toastId = toast.loading('Preparing project ZIP...');
+    const toastId = toast.loading('Initializing ZIP download...');
     try {
       const zip = new JSZip();
       // Comprehensive list of files to include
@@ -82,6 +82,7 @@ export function AdminDashboard() {
         'src/components/ui/textarea.tsx',
         'src/components/ui/progress.tsx',
         'src/components/ui/sonner.tsx',
+        'src/components/ui/collapsible.tsx',
         'worker/index.ts',
         'worker/core-utils.ts',
         'worker/entities.ts',
@@ -91,8 +92,15 @@ export function AdminDashboard() {
         'supabase/migrations/init.sql'
       ];
       let successCount = 0;
-      await Promise.all(filesToFetch.map(async (filePath) => {
+      const totalFiles = filesToFetch.length;
+      // Fetch files with progress updates
+      for (let i = 0; i < totalFiles; i++) {
+        const filePath = filesToFetch[i];
         try {
+          // Update toast every 5 files to avoid spamming
+          if (i % 5 === 0) {
+            toast.loading(`Fetching files... ${Math.round((i / totalFiles) * 100)}%`, { id: toastId });
+          }
           const response = await fetch(`/${filePath}`);
           if (response.ok) {
             const content = await response.text();
@@ -105,10 +113,13 @@ export function AdminDashboard() {
         } catch (e) {
           console.warn(`Failed to fetch ${filePath}`, e);
         }
-      }));
+        // Small delay to allow UI updates
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
       if (successCount === 0) {
         throw new Error("Could not fetch source files. Dev server required.");
       }
+      toast.loading('Compressing...', { id: toastId });
       const content = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(content);
       const link = document.createElement('a');
@@ -118,12 +129,10 @@ export function AdminDashboard() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.dismiss(toastId);
-      toast.success(`Project zipped successfully! (${successCount} files)`);
+      toast.success(`Project zipped successfully! (${successCount} files)`, { id: toastId });
     } catch (error) {
       console.error("Zip generation failed:", error);
-      toast.dismiss(toastId);
-      toast.error("Failed to generate ZIP. See console.");
+      toast.error("Failed to generate ZIP. See console.", { id: toastId });
     } finally {
       setIsZipping(false);
     }
@@ -230,21 +239,41 @@ export function AdminDashboard() {
           <TabsTrigger value="disputes">Disputes</TabsTrigger>
           <TabsTrigger value="reviews">Review Moderation</TabsTrigger>
         </TabsList>
-        <TabsContent value="users" className="space-y-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <UserTable />
-          </motion.div>
-        </TabsContent>
-        <TabsContent value="disputes" className="space-y-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <DisputePanel />
-          </motion.div>
-        </TabsContent>
-        <TabsContent value="reviews" className="space-y-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <ReviewModerator />
-          </motion.div>
-        </TabsContent>
+        <AnimatePresence mode="wait">
+          <TabsContent value="users" className="space-y-4">
+            <motion.div 
+              key="users"
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <UserTable />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="disputes" className="space-y-4">
+            <motion.div 
+              key="disputes"
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <DisputePanel />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="reviews" className="space-y-4">
+            <motion.div 
+              key="reviews"
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ReviewModerator />
+            </motion.div>
+          </TabsContent>
+        </AnimatePresence>
       </Tabs>
     </div>
   );
