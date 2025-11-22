@@ -1,6 +1,6 @@
 # Chronos - Community Time Bank
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/savagetongue/chronos-community-time-bank)
 
 ## Overview
 
@@ -141,7 +141,7 @@ Deploy to Cloudflare Pages for the frontend and Workers for any edge logic (thou
 
 4. Supabase Production Setup:
    - Run migrations on production DB.   - Enable production RLS and Edge Functions.
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/savagetongue/chronos-community-time-bank)
 
 ### Deployment to Cloudflare Pages
 
