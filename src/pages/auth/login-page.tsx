@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Loader2, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,6 +19,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase, checkSupabaseEnv } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthStore } from '@/store/auth-store';
+import { Profile } from '@/types/database';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
@@ -28,6 +30,9 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const setSession = useAuthStore((s) => s.setSession);
+  const user = useAuthStore((s) => s.user);
+  const profile = useAuthStore((s) => s.profile);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -35,6 +40,28 @@ export function LoginPage() {
       password: '',
     },
   });
+  // Polling for admin approval if logged in but not approved
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (user && profile && profile.is_approved === false) {
+      interval = setInterval(async () => {
+        const { data: freshProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (freshProfile && freshProfile.is_approved === true) {
+          toast.success('Your account has been approved!');
+          setSession(user, freshProfile as Profile);
+          navigate('/dashboard');
+          clearInterval(interval);
+        }
+      }, 30000); // Check every 30 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [user, profile, setSession, navigate]);
   const onSubmit = useCallback(async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);

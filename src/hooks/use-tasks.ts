@@ -132,8 +132,22 @@ export function useCreateTask() {
     mutationFn: async (newTask) => {
       const newTaskData: TaskInsert = {
         ...newTask,
+        status: 'open',
+        visibility: 'public',
+        max_participants: 1,
+        travel_allowance: 0,
+        cancellation_policy: 'flexible',
+        location_city: newTask.location_city || null,
+        location_state: null,
+        location_country: null,
+        location_lat: null,
+        location_lng: null,
+        online_platform: newTask.online_platform || null,
+        online_link: null,
+        proposed_times: [],
         confirmed_time: null,
-        proposed_times: []
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       const { data, error } = await supabase
         .from('tasks')
@@ -153,45 +167,41 @@ export function useCreateTask() {
 }
 export function useAcceptTask() {
   const queryClient = useQueryClient();
-  return useMutation<Escrow, Error, { taskId: string; userId: string }>({
-    mutationFn: async ({ taskId, userId }) => {
+  return useMutation<Escrow, Error, { taskId: string; userId: string; task: Task }>({
+    mutationFn: async ({ taskId, userId, task }) => {
       if (!taskId) throw new Error('Task ID required');
-      // In a real app, this would be an Edge Function call
-      // supabase.functions.invoke('accept-task', { body: { taskId, userId } })
-      // For now, we manually update the task status
-      const updateData: TaskUpdate = { status: 'accepted' };
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', taskId);
-      if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
-      // Create a real escrow record if possible, otherwise mock
+      // Create a real escrow record
       const escrowData: EscrowInsert = {
         task_id: taskId,
-        requester_id: 'req-id', // Placeholder, ideally fetched from task
+        requester_id: task.creator_id,
         provider_id: userId,
-        credits_locked: 5,
+        credits_locked: task.estimated_credits + (task.travel_allowance || 0),
         credits_released: 0,
         status: 'locked',
         locked_at: new Date().toISOString(),
-        is_finalized: false,
         auto_release_at: null,
         released_at: null,
-        dispute_id: null
+        dispute_id: null,
+        is_finalized: false,
+        created_at: new Date().toISOString()
       };
       // Try to insert real escrow
-      const { data, error } = await supabase.from('escrows').insert([escrowData]).select().single();
+      const { data: escrow, error } = await supabase.from('escrows').insert([escrowData]).select().single();
       if (error) {
           console.warn('Escrow insert failed (likely RLS or missing task data), using mock', error);
+          // Fallback mock return if insert fails
           return {
             ...escrowData,
             id: `escrow-${Date.now()}`,
             created_at: new Date().toISOString(),
-            requester_id: 'mock-req',
+            requester_id: task.creator_id,
             provider_id: userId
           } as Escrow;
       }
-      return data as Escrow;
+      // Update task status
+      const taskUpdate: TaskUpdate = { status: 'accepted' };
+      await supabase.from('tasks').update(taskUpdate).eq('id', taskId);
+      return escrow as Escrow;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -276,10 +286,17 @@ export function useAddReview() {
   return useMutation<Review, Error, ReviewInsert>({
     mutationFn: async (review) => {
       const payload: ReviewInsert = {
-        ...review,
-        title: null,
+        task_id: review.task_id,
+        reviewer_id: review.reviewer_id,
+        reviewee_id: review.reviewee_id,
+        rating: review.rating,
+        title: review.title || null,
+        comment: review.comment || null,
+        tags: review.tags || [],
+        is_anonymous: review.is_anonymous || false,
         reply_id: null,
-        is_hidden: false
+        is_hidden: false,
+        created_at: new Date().toISOString()
       };
       const { data, error } = await supabase
         .from('reviews')
@@ -301,12 +318,18 @@ export function useRaiseDispute() {
   return useMutation<Dispute, Error, DisputeInsert>({
     mutationFn: async (dispute) => {
       const disputeData: DisputeInsert = {
-        ...dispute,
+        escrow_id: dispute.escrow_id,
+        raised_by: dispute.raised_by,
+        reason: dispute.reason,
+        details: dispute.details,
+        evidence: dispute.evidence || [],
+        status: 'open',
         admin_decision: null,
         admin_decision_payload: null,
         deadline_at: null,
         decided_at: null,
-        resolved_at: null
+        resolved_at: null,
+        created_at: new Date().toISOString()
       };
       const { data, error } = await supabase
         .from('disputes')
