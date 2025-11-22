@@ -74,15 +74,29 @@ export function RegisterPage() {
         } as any);
         if (profileError) {
           console.warn('Profile creation failed (might be handled by trigger):', profileError);
+          // Don't block success if profile fails (trigger might handle it), but warn user
+          toast.warning('Profile setup incomplete, but account created.');
         }
       }
       setSuccess(true);
       toast.success('Account created! Awaiting admin approval.');
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        const msg = err.message.toLowerCase();
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const isPlaceholder = !supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey.includes('placeholder');
+        if (msg.includes('network') || msg.includes('fetch') || isPlaceholder) {
+          setError('Please configure your Supabase URL and key in environment variables to enable signup.');
+        } else if (msg.includes('password')) {
+          setError('Password must meet requirements (8+ chars).');
+        } else {
+          setError(err.message);
+        }
+        toast.error(err.message);
       } else {
         setError('An unknown error occurred');
+        toast.error('An unknown error occurred');
       }
     } finally {
       setIsLoading(false);
@@ -223,6 +237,9 @@ export function RegisterPage() {
                 </Button>
               </form>
             </Form>
+            <div className="mt-4 p-3 bg-secondary/50 rounded text-xs text-muted-foreground">
+              Note: In sandbox mode, use mock credentials as Supabase is placeholder-configured. Admin approval simulated.
+            </div>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Already have an account?{' '}
