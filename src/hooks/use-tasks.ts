@@ -155,7 +155,7 @@ export function useTask(id: string) {
   });
 }
 // Correct type for task creation to avoid 'Partial<Task>' mismatch
-type CreateTaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'proposed_times' | 'confirmed_time'> & { 
+type CreateTaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'proposed_times' | 'confirmed_time'> & {
   creator_id: string;
   proposed_times?: string[] | null;
 };
@@ -192,7 +192,7 @@ export function useAcceptTask() {
       // Mock DB updates
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted' } as any)
         .eq('id', taskId);
       if (updateError) {
         console.warn('Mock update failed (likely RLS or no DB), proceeding with mock success');
@@ -228,7 +228,7 @@ export function useUpdateTask() {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Task> }) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
@@ -236,7 +236,57 @@ export function useUpdateTask() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
+  });
+}
+export function useCheckIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      // Mock check-in logic
+      // In real app: update metadata or check-in table
+      // Here: update status to in_progress if not already
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ status: 'in_progress' } as any)
+        .eq('id', taskId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
+  });
+}
+export function useCompleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      // Mock completion logic
+      // 1. Release escrow (Edge Function)
+      // 2. Update task status to completed
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ status: 'completed' } as any)
+        .eq('id', taskId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
   });
