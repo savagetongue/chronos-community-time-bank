@@ -129,8 +129,8 @@ export function AdminDashboard() {
             Platform governance and moderation overview.
           </p>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="border-chronos-teal text-chronos-teal hover:bg-chronos-teal/10"
           onClick={handleDownloadZip}
           disabled={isZipping}
@@ -149,7 +149,7 @@ export function AdminDashboard() {
         </Button>
       </div>
       {/* KPI Cards */}
-      <motion.div 
+      <motion.div
         variants={container}
         initial="hidden"
         animate="show"
