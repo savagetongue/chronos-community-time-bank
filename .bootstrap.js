@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add @supabase/supabase-js@^2.45.4",
     "bun add @supabase/supabase-js",
-    "bun add jszip"
+    "bun add jszip",
+    "bun add @googlemaps/react-wrapper"
 ];
     
     if (commands.length === 0) {
