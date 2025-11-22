@@ -52,11 +52,6 @@ export interface Database {
     };
   };
 }
-// Helper to make all properties optional and nullable for Update types
-// This ensures compatibility with Supabase's Partial<T> expectation
-type UpdateType<T> = {
-  [P in keyof T]?: T[P] | null | undefined;
-};
 // --- Profiles ---
 export interface Profile {
   id: string;
@@ -90,7 +85,20 @@ export interface ProfileInsert {
   created_at?: string | null | undefined;
   updated_at?: string | null | undefined;
 }
-export type ProfileUpdate = UpdateType<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
+export interface ProfileUpdate {
+  display_name?: string | null | undefined;
+  email?: string | undefined;
+  bio?: string | null | undefined;
+  skills?: string[] | null | undefined;
+  credits?: number | null | undefined;
+  locked_credits?: number | null | undefined;
+  reputation_score?: number | null | undefined;
+  completed_tasks_count?: number | null | undefined;
+  is_approved?: boolean | null | undefined;
+  is_suspended?: boolean | null | undefined;
+  kyc_level?: number | null | undefined;
+  updated_at?: string | null | undefined;
+}
 // --- Tasks ---
 export type TaskType = 'offer' | 'request';
 export type TaskMode = 'online' | 'in_person' | 'hybrid';
@@ -146,7 +154,28 @@ export interface TaskInsert {
   created_at?: string | null | undefined;
   updated_at?: string | null | undefined;
 }
-export type TaskUpdate = UpdateType<Omit<Task, 'id' | 'created_at' | 'updated_at'>>;
+export interface TaskUpdate {
+  type?: TaskType | undefined;
+  title?: string | undefined;
+  description?: string | undefined;
+  estimated_credits?: number | undefined;
+  mode?: TaskMode | undefined;
+  status?: TaskStatus | null | undefined;
+  visibility?: TaskVisibility | null | undefined;
+  max_participants?: number | null | undefined;
+  travel_allowance?: number | null | undefined;
+  cancellation_policy?: string | null | undefined;
+  location_city?: string | null | undefined;
+  location_state?: string | null | undefined;
+  location_country?: string | null | undefined;
+  location_lat?: number | null | undefined;
+  location_lng?: number | null | undefined;
+  online_platform?: string | null | undefined;
+  online_link?: string | null | undefined;
+  proposed_times?: Json | null | undefined;
+  confirmed_time?: string | null | undefined;
+  updated_at?: string | null | undefined;
+}
 // --- Escrows ---
 export type EscrowStatus = 'locked' | 'released' | 'refunded' | 'disputed';
 export interface Escrow {
@@ -179,7 +208,16 @@ export interface EscrowInsert {
   is_finalized?: boolean | null | undefined;
   created_at?: string | null | undefined;
 }
-export type EscrowUpdate = UpdateType<Omit<Escrow, 'id' | 'created_at'>>;
+export interface EscrowUpdate {
+  credits_locked?: number | undefined;
+  credits_released?: number | null | undefined;
+  status?: EscrowStatus | null | undefined;
+  locked_at?: string | null | undefined;
+  auto_release_at?: string | null | undefined;
+  released_at?: string | null | undefined;
+  dispute_id?: string | null | undefined;
+  is_finalized?: boolean | null | undefined;
+}
 // --- Reviews ---
 export interface Review {
   id: string;
@@ -209,7 +247,15 @@ export interface ReviewInsert {
   is_hidden?: boolean | null | undefined;
   created_at?: string | null | undefined;
 }
-export type ReviewUpdate = UpdateType<Omit<Review, 'id' | 'created_at'>>;
+export interface ReviewUpdate {
+  rating?: number | undefined;
+  title?: string | null | undefined;
+  comment?: string | null | undefined;
+  tags?: string[] | null | undefined;
+  is_anonymous?: boolean | null | undefined;
+  reply_id?: string | null | undefined;
+  is_hidden?: boolean | null | undefined;
+}
 // --- Disputes ---
 export type DisputeReason = 'not_completed' | 'no_show' | 'poor_quality' | 'safety' | 'fraud' | 'unauthorized_recording' | 'other';
 export type DisputeStatus = 'open' | 'admin_reviewed' | 'resolved';
@@ -243,7 +289,17 @@ export interface DisputeInsert {
   created_at?: string | null | undefined;
   resolved_at?: string | null | undefined;
 }
-export type DisputeUpdate = UpdateType<Omit<Dispute, 'id' | 'created_at'>>;
+export interface DisputeUpdate {
+  reason?: DisputeReason | undefined;
+  details?: string | undefined;
+  evidence?: string[] | null | undefined;
+  status?: DisputeStatus | null | undefined;
+  admin_decision?: string | null | undefined;
+  admin_decision_payload?: Json | null | undefined;
+  deadline_at?: string | null | undefined;
+  decided_at?: string | null | undefined;
+  resolved_at?: string | null | undefined;
+}
 // --- Transactions ---
 export type TransactionType = 'lock' | 'release' | 'refund' | 'admin_adjust';
 export interface Transaction {
@@ -270,7 +326,15 @@ export interface TransactionInsert {
   meta?: Json | null | undefined;
   created_at?: string | null | undefined;
 }
-export type TransactionUpdate = UpdateType<Omit<Transaction, 'id' | 'created_at'>>;
+export interface TransactionUpdate {
+  type?: TransactionType | undefined;
+  amount?: number | undefined;
+  balance_before?: number | undefined;
+  balance_after?: number | undefined;
+  escrow_id?: string | null | undefined;
+  task_id?: string | null | undefined;
+  meta?: Json | null | undefined;
+}
 // --- Notifications ---
 export interface Notification {
   id: string;
@@ -288,7 +352,11 @@ export interface NotificationInsert {
   is_read?: boolean | null | undefined;
   created_at?: string | null | undefined;
 }
-export type NotificationUpdate = UpdateType<Omit<Notification, 'id' | 'created_at'>>;
+export interface NotificationUpdate {
+  type?: string | undefined;
+  payload?: Json | null | undefined;
+  is_read?: boolean | null | undefined;
+}
 // --- Files ---
 export interface FileRecord {
   id: string;
@@ -312,4 +380,11 @@ export interface FileRecordInsert {
   mime_type: string;
   uploaded_at?: string | null | undefined;
 }
-export type FileRecordUpdate = UpdateType<Omit<FileRecord, 'id' | 'created_at'>>;
+export interface FileRecordUpdate {
+  bucket?: string | undefined;
+  path?: string | undefined;
+  url?: string | undefined;
+  file_hash?: string | null | undefined;
+  size_bytes?: number | undefined;
+  mime_type?: string | undefined;
+}

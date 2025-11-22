@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, AlertTriangle, Activity, Download, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,13 +12,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import JSZip from 'jszip';
 export function AdminDashboard() {
-  const { data: stats, isLoading } = useAdminStats();
+  const { data: stats, isLoading, refetch } = useAdminStats();
   const [isZipping, setIsZipping] = useState(false);
+  // Real-time stats update
+  useEffect(() => {
+    const interval = setInterval(() => refetch(), 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, [refetch]);
   const handleDownloadZip = async () => {
     setIsZipping(true);
+    const toastId = toast.loading('Preparing project ZIP...');
     try {
       const zip = new JSZip();
-      // List of critical files to include in the zip
+      // Comprehensive list of files to include
       const filesToFetch = [
         'package.json',
         'tsconfig.json',
@@ -27,6 +33,7 @@ export function AdminDashboard() {
         'tailwind.config.js',
         'vite.config.ts',
         'index.html',
+        'wrangler.jsonc',
         'src/main.tsx',
         'src/index.css',
         'src/App.css',
@@ -39,6 +46,7 @@ export function AdminDashboard() {
         'src/hooks/use-admin.ts',
         'src/hooks/use-tasks.ts',
         'src/hooks/use-theme.ts',
+        'src/hooks/use-mobile.tsx',
         'src/components/layout/main-layout.tsx',
         'src/components/layout/navbar.tsx',
         'src/components/layout/AppLayout.tsx',
@@ -61,21 +69,34 @@ export function AdminDashboard() {
         'src/components/task-card.tsx',
         'src/components/filters/task-filters.tsx',
         'src/components/ui/skeleton.tsx',
+        'src/components/ui/button.tsx',
+        'src/components/ui/card.tsx',
+        'src/components/ui/input.tsx',
+        'src/components/ui/badge.tsx',
+        'src/components/ui/avatar.tsx',
+        'src/components/ui/dialog.tsx',
+        'src/components/ui/sheet.tsx',
+        'src/components/ui/table.tsx',
+        'src/components/ui/tabs.tsx',
+        'src/components/ui/select.tsx',
+        'src/components/ui/textarea.tsx',
+        'src/components/ui/progress.tsx',
+        'src/components/ui/sonner.tsx',
         'worker/index.ts',
         'worker/core-utils.ts',
         'worker/entities.ts',
         'worker/user-routes.ts',
         'shared/types.ts',
-        'shared/mock-data.ts'
+        'shared/mock-data.ts',
+        'supabase/migrations/init.sql'
       ];
       let successCount = 0;
       await Promise.all(filesToFetch.map(async (filePath) => {
         try {
-          // Try to fetch the file relative to root
           const response = await fetch(`/${filePath}`);
           if (response.ok) {
             const content = await response.text();
-            // Don't include HTML responses (e.g. if SPA fallback returns index.html for missing files)
+            // Filter out HTML responses (SPA fallback)
             if (!content.trim().startsWith('<!doctype html>') && !content.trim().startsWith('<!DOCTYPE html>')) {
                 zip.file(filePath, content);
                 successCount++;
@@ -86,11 +107,9 @@ export function AdminDashboard() {
         }
       }));
       if (successCount === 0) {
-        throw new Error("Could not fetch source files. This feature requires the dev server to serve source files.");
+        throw new Error("Could not fetch source files. Dev server required.");
       }
-      // Generate the zip
       const content = await zip.generateAsync({ type: "blob" });
-      // Trigger download
       const url = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
@@ -99,10 +118,12 @@ export function AdminDashboard() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast.dismiss(toastId);
       toast.success(`Project zipped successfully! (${successCount} files)`);
     } catch (error) {
       console.error("Zip generation failed:", error);
-      toast.error("Failed to generate ZIP. See console for details.");
+      toast.dismiss(toastId);
+      toast.error("Failed to generate ZIP. See console.");
     } finally {
       setIsZipping(false);
     }
@@ -163,7 +184,7 @@ export function AdminDashboard() {
           </>
         ) : (
           <>
-            <motion.div variants={item} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+            <motion.div variants={item} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
               <Card className="hover:shadow-glow transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -175,7 +196,7 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div variants={item} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+            <motion.div variants={item} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
               <Card className="hover:shadow-glow transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Active Disputes</CardTitle>
@@ -187,7 +208,7 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div variants={item} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+            <motion.div variants={item} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
               <Card className="hover:shadow-glow transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
