@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert, EscrowUpdate } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert, EscrowUpdate, TaskStatus, EscrowStatus, Json } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -199,7 +199,8 @@ export function useAcceptTask() {
           } as Escrow;
       }
       // Update task status
-      await supabase.from('tasks').update({ status: 'accepted' }).eq('id', taskId);
+      const taskUpdate: TaskUpdate = { status: 'accepted' };
+      await supabase.from('tasks').update(taskUpdate).eq('id', taskId);
       return escrow as Escrow;
     },
     onSuccess: (_, variables) => {
@@ -237,9 +238,10 @@ export function useCheckIn() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
+      const updatePayload: TaskUpdate = { status: 'in_progress' };
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'in_progress' })
+        .update(updatePayload)
         .eq('id', taskId)
         .select()
         .single();
@@ -260,9 +262,10 @@ export function useCompleteTask() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
+      const updatePayload: TaskUpdate = { status: 'completed' };
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'completed' })
+        .update(updatePayload)
         .eq('id', taskId)
         .select()
         .single();
@@ -336,9 +339,10 @@ export function useRaiseDispute() {
       if (error) throw error;
       if (!data) throw new Error('No data returned from dispute creation');
       if (dispute.escrow_id) {
+        const escrowUpdate: EscrowUpdate = { status: 'disputed', dispute_id: data.id };
         await supabase
           .from('escrows')
-          .update({ status: 'disputed', dispute_id: data.id })
+          .update(escrowUpdate)
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;
