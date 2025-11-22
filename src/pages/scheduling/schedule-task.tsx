@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
-import { Calendar as CalendarIcon, Clock, Check, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Check, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTask, useUpdateTask } from '@/hooks/use-tasks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { GoogleMap } from '@/components/map/google-map';
 import 'react-day-picker/style.css';
 export function ScheduleTask() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: task, isLoading } = useTask(id || '');
+  const taskId = id || '';
+  const { data: task, isLoading } = useTask(taskId);
   const updateTask = useUpdateTask();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('10:00');
@@ -26,7 +28,7 @@ export function ScheduleTask() {
       </div>
     );
   }
-  if (!task) return <div>Task not found</div>;
+  if (!task) return <div className="max-w-7xl mx-auto px-4 py-12">Task not found</div>;
   const handleConfirm = async () => {
     if (!selectedDate) return;
     // Combine date and time
@@ -48,6 +50,7 @@ export function ScheduleTask() {
       toast.error('Failed to schedule session');
     }
   };
+  const showMap = task.mode === 'in_person' || task.mode === 'hybrid';
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
@@ -110,7 +113,7 @@ export function ScheduleTask() {
             </Card>
           </div>
         </div>
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-start space-y-6">
           <Card className="bg-secondary/20 border-none shadow-lg">
             <CardHeader>
               <CardTitle>Summary</CardTitle>
@@ -131,16 +134,41 @@ export function ScheduleTask() {
                 <span className="text-muted-foreground">Timezone</span>
                 <span className="font-medium">{Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
               </div>
-              <Button 
+              <Button
                 className="w-full h-12 text-lg bg-chronos-teal hover:bg-chronos-teal/90 text-white"
                 onClick={handleConfirm}
                 disabled={!selectedDate || updateTask.isPending}
               >
-                {updateTask.isPending ? 'Confirming...' : 'Confirm Schedule'}
-                <Check className="w-5 h-5 ml-2" />
+                {updateTask.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Confirming...
+                  </>
+                ) : (
+                  <>
+                    Confirm Schedule
+                    <Check className="w-5 h-5 ml-2" />
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
+          {showMap && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Location Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-hidden rounded-b-lg">
+                <GoogleMap 
+                  lat={task.location_lat} 
+                  lng={task.location_lng} 
+                  city={task.location_city}
+                  zoom={14}
+                  height="250px"
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

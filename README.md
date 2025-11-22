@@ -54,11 +54,11 @@ The application is built as a modern Single Page Application (SPA) using React a
      ```
      VITE_SUPABASE_URL=https://your-project.supabase.co
      VITE_SUPABASE_ANON_KEY=your-anon-key
+     VITE_GOOGLE_MAPS_KEY=your-google-maps-api-key
      SUPABASE_URL=https://your-project.supabase.co
      SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-     ```
-   - For Cloudflare deployment, add these to your Workers/Pages environment variables.
-
+     ```   - For Cloudflare deployment, add these to your Workers/Pages environment variables.
+   - For Google Maps integration, set VITE_GOOGLE_MAPS_KEY=your_api_key from Google Cloud Console (enable Maps JavaScript API). Note: Free tier sufficient; fallback to city search if missing.
 4. Initialize Supabase Database:
    - In your Supabase dashboard, go to SQL Editor.
    - Run the schema migrations (provided in project docs or generate from data model in client request).
@@ -150,10 +150,8 @@ Deploy to Cloudflare Pages for the frontend and Workers for any edge logic (thou
 
 2. **Cloudflare Dashboard Setup**:
    - Go to Cloudflare Pages dashboard > Create project > Connect GitHub repo (or upload directly).
-   - Set **Build command**: `bun run build` (or `npm run build` if using npm).
-   - Set **Build output directory**: `dist` (critical - matches wrangler.jsonc).
-   - Add environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-
+   - Set **Build command**: `bun run build` (or `npm run build` if using npm).   - Set **Build output directory**: `dist` (critical - matches wrangler.jsonc).
+   - Add environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_MAPS_KEY`.
 3. **Deploy**:
    Click Deploy. Pages will build and serve the SPA from `dist`.
 

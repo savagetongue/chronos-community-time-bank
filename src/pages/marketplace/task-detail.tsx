@@ -12,9 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTask, useAcceptTask, useAddReview, useRaiseDispute } from '@/hooks/use-tasks';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
+import { GoogleMap } from '@/components/map/google-map';
 export function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: task, isLoading, error } = useTask(id || '');
+  // Guard against undefined ID
+  const taskId = id || '';
+  const { data: task, isLoading, error } = useTask(taskId);
   const user = useAuthStore((s) => s.user);
   const acceptTask = useAcceptTask();
   const addReview = useAddReview();
@@ -43,7 +46,7 @@ export function TaskDetail() {
       await addReview.mutateAsync({
         task_id: task.id,
         reviewer_id: user.id,
-        reviewee_id: task.creator_id, // Simplified: assumes reviewer is always reviewing creator for now
+        reviewee_id: task.creator_id,
         rating: reviewRating,
         comment: reviewComment,
         tags: [],
@@ -105,6 +108,7 @@ export function TaskDetail() {
   const isAccepted = task.status === 'accepted' || task.status === 'in_progress';
   const isCompleted = task.status === 'completed';
   const isCreator = user?.id === task.creator_id;
+  const showMap = task.mode === 'in_person' || task.mode === 'hybrid';
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
       <Link to="/explore" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -140,7 +144,7 @@ export function TaskDetail() {
             </div>
           </div>
           {/* Location/Mode Details */}
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 {task.mode === 'online' ? <Video className="w-5 h-5 mr-2" /> : <MapPin className="w-5 h-5 mr-2" />}
@@ -160,13 +164,23 @@ export function TaskDetail() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-muted h-48 rounded-lg flex items-center justify-center text-muted-foreground">
-                    Map Placeholder (Google Maps Integration)
-                  </div>
+                  {showMap && (
+                    <div className="rounded-lg overflow-hidden border border-border">
+                      <GoogleMap 
+                        lat={isAccepted ? task.location_lat : null} 
+                        lng={isAccepted ? task.location_lng : null} 
+                        city={task.location_city}
+                        zoom={isAccepted ? 15 : 12}
+                        height="300px"
+                      />
+                    </div>
+                  )}
                   <div>
-                    <p className="font-medium">{task.location_city}, {task.location_state}</p>
+                    <p className="font-medium">{task.location_city || 'Location TBD'}, {task.location_state}</p>
                     <p className="text-sm text-muted-foreground">
-                      Exact address hidden until accepted for safety.
+                      {isAccepted 
+                        ? "Exact location revealed above." 
+                        : "Exact address hidden until accepted for safety."}
                     </p>
                   </div>
                 </div>
@@ -226,7 +240,7 @@ export function TaskDetail() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Action Card */}
-          <Card className="border-chronos-teal/20 shadow-lg">
+          <Card className="border-chronos-teal/20 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="bg-chronos-teal/5 border-b border-chronos-teal/10">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-muted-foreground">Value</span>
