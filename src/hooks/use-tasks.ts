@@ -154,6 +154,7 @@ export function useAcceptTask() {
   const queryClient = useQueryClient();
   return useMutation<Escrow, Error, { taskId: string; userId: string }>({
     mutationFn: async ({ taskId, userId }) => {
+      if (!taskId) throw new Error('Task ID required');
       console.log(`Mocking accept task ${taskId} by ${userId}`);
       // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -194,6 +195,7 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation<Task, Error, { id: string; updates: Partial<Task> }>({
     mutationFn: async ({ id, updates }) => {
+      if (!id) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
         .update(updates as Database['public']['Tables']['tasks']['Update'])
@@ -216,6 +218,7 @@ export function useCheckIn() {
   const queryClient = useQueryClient();
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
+      if (!taskId) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
         .update({ status: 'in_progress' } as Database['public']['Tables']['tasks']['Update'])
@@ -238,6 +241,7 @@ export function useCompleteTask() {
   const queryClient = useQueryClient();
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
+      if (!taskId) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
         .update({ status: 'completed' } as Database['public']['Tables']['tasks']['Update'])
