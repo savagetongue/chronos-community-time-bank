@@ -72,7 +72,7 @@ export function RegisterPage() {
         // Admin Auto-Approval Logic
         if (authData.user.email === 'anandbhagyawant8719@gmail.com') {
           try {
-            const updatePayload: ProfileUpdate = { is_approved: true };
+            const updatePayload: ProfileUpdate = { is_approved: true, updated_at: new Date().toISOString() };
             const { error: adminUpdateError } = await supabaseAdmin
               .from('profiles')
               .update(updatePayload)
@@ -90,7 +90,7 @@ export function RegisterPage() {
         }
         if (!existingProfile) {
           // Fallback: Create profile manually if trigger failed
-          const profileData: ProfileInsert = {
+          const profileData: Partial<ProfileInsert> = {
             id: authData.user.id,
             email: data.email,
             display_name: data.name,

@@ -43,14 +43,14 @@ export function LoginPage() {
   // Polling for admin approval if logged in but not approved
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (user && profile && profile.is_approved === false) {
+    if (user && profile && !profile.is_approved) {
       interval = setInterval(async () => {
         const { data: freshProfile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
-        if (freshProfile && freshProfile.is_approved === true) {
+        if (freshProfile && freshProfile.is_approved) {
           toast.success('Your account has been approved!');
           setSession(user, freshProfile as Profile);
           navigate('/dashboard');

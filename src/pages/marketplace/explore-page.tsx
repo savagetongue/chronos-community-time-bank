@@ -113,9 +113,9 @@ export function ExplorePage() {
             animate="show"
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout" initial={false}>
               {paginatedTasks?.map((task) => (
-                <motion.div key={task.id} variants={item} layout>
+                <motion.div key={task.id} variants={item} layout transition={{ duration: 0.2 }}>
                   <TaskCard task={task} />
                 </motion.div>
               ))}

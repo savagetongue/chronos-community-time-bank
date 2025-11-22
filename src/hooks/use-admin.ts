@@ -199,6 +199,18 @@ export function useModerateReview() {
 }
 // --- Notifications ---
 export function useNotifications(userId?: string) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase.channel('notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
   return useQuery({
     queryKey: ['notifications', userId],
     queryFn: async () => {
