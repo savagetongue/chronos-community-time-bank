@@ -18,7 +18,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase, supabaseAdmin, checkSupabaseEnv } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { ProfileInsert } from '@/types/database';
+import { ProfileInsert, ProfileUpdate } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -72,9 +72,10 @@ export function RegisterPage() {
         // Admin Auto-Approval Logic
         if (authData.user.email === 'anandbhagyawant8719@gmail.com') {
           try {
+            const updatePayload: ProfileUpdate = { is_approved: true };
             const { error: adminUpdateError } = await supabaseAdmin
               .from('profiles')
-              .update({ is_approved: true })
+              .update(updatePayload)
               .eq('id', authData.user.id);
             if (adminUpdateError) {
               console.error('Admin auto-approval failed:', adminUpdateError);
