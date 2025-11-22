@@ -22,6 +22,7 @@ CREATE TABLE public.profiles (
     completed_tasks_count INTEGER DEFAULT 0,
     is_approved BOOLEAN DEFAULT FALSE,
     is_suspended BOOLEAN DEFAULT FALSE,
+    is_admin BOOLEAN DEFAULT FALSE,
     kyc_level INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -159,7 +160,7 @@ CREATE POLICY "Involved parties can update escrows" ON public.escrows FOR UPDATE
 -- Disputes: Involved parties read
 CREATE POLICY "Involved parties can view disputes" ON public.disputes FOR SELECT USING (auth.uid() = raised_by OR EXISTS (SELECT 1 FROM public.escrows WHERE id = escrow_id AND (requester_id = auth.uid() OR provider_id = auth.uid())));
 CREATE POLICY "Authenticated users can insert disputes" ON public.disputes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
--- Admin updates handled via service role client in hooks, no specific RLS needed for admin user if bypassing RLS
+CREATE POLICY "Admin can update disputes" ON public.disputes FOR UPDATE USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true));
 -- Reviews: Public read
 CREATE POLICY "Reviews are viewable by everyone" ON public.reviews FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert reviews" ON public.reviews FOR INSERT WITH CHECK (auth.role() = 'authenticated');
@@ -172,13 +173,13 @@ CREATE POLICY "Users can insert own files" ON public.files FOR INSERT WITH CHECK
 -- TRIGGERS
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $
+RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, display_name, is_approved, credits, locked_credits, reputation_score, completed_tasks_count, kyc_level)
   VALUES (new.id, new.email, new.raw_user_meta_data->>'display_name', false, 0, 0, 0, 0, 0);
   RETURN new;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

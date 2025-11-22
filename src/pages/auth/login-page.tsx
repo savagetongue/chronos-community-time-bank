@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/lib/supabase';
+import { supabase, checkSupabaseEnv } from '@/lib/supabase';
 import { toast } from 'sonner';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -37,6 +37,10 @@ export function LoginPage() {
   const onSubmit = useCallback(async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
+    // Check env vars
+    if (!checkSupabaseEnv()) {
+      toast.info('Sandbox: Using mock credentials. Real backend requires environment variables.');
+    }
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -50,12 +54,9 @@ export function LoginPage() {
       if (err instanceof Error) {
         // Map Supabase errors to user-friendly messages
         const msg = err.message.toLowerCase();
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const isPlaceholder = !supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey.includes('placeholder');
         if (msg.includes('invalid login credentials')) {
           setError('Invalid email or password. Please try again.');
-        } else if (msg.includes('network') || msg.includes('fetch') || isPlaceholder) {
+        } else if (msg.includes('network') || msg.includes('fetch')) {
           setError('Please configure your Supabase URL and key in environment variables to enable login.');
         } else {
           setError(err.message);

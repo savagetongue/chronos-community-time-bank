@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { useTask, useCheckIn, useCompleteTask, useUploadEvidence, useTaskFiles } from '@/hooks/use-tasks';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ export function SessionManagement() {
   const checkIn = useCheckIn();
   const completeTask = useCompleteTask();
   const uploadEvidence = useUploadEvidence();
+  const [uploadProgress, setUploadProgress] = useState(0);
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 space-y-8">
@@ -65,13 +67,24 @@ export function SessionManagement() {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      setUploadProgress(10); // Start progress
       try {
+        // Simulate progress for better UX since axios/xhr progress isn't directly exposed in simple fetch
+        const interval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 10, 90));
+        }, 200);
         await uploadEvidence.mutateAsync({ file, taskId: task.id, userId: user.id });
+        clearInterval(interval);
+        setUploadProgress(100);
+        setTimeout(() => setUploadProgress(0), 1000); // Reset after delay
       } catch (error) {
+        setUploadProgress(0);
         // Error handled in hook
       } finally {
         // Reset input
-        e.target.value = '';
+        if (e.target) {
+          e.target.value = '';
+        }
       }
     }
   };
@@ -213,10 +226,11 @@ export function SessionManagement() {
                       accept="image/*,video/*,.pdf"
                       disabled={uploadEvidence.isPending}
                     />
-                    {uploadEvidence.isPending ? (
-                      <div className="flex flex-col items-center text-chronos-teal">
+                    {uploadEvidence.isPending || uploadProgress > 0 ? (
+                      <div className="flex flex-col items-center text-chronos-teal w-full max-w-xs mx-auto">
                         <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                        <p className="font-medium">Uploading...</p>
+                        <p className="font-medium mb-2">Uploading...</p>
+                        <Progress value={uploadProgress} className="h-2 w-full" />
                       </div>
                     ) : (
                       <div className="text-muted-foreground">
