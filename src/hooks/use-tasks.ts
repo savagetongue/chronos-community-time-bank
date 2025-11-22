@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute } from '@/types/database';
 import { subDays } from 'date-fns';
 export interface TaskFilters {
   search: string;
@@ -20,6 +20,7 @@ const MOCK_TASKS: Task[] = [
     estimated_credits: 1,
     mode: 'online',
     status: 'open',
+    visibility: 'public',
     max_participants: 1,
     travel_allowance: 0,
     cancellation_policy: 'flexible',
@@ -44,6 +45,7 @@ const MOCK_TASKS: Task[] = [
     estimated_credits: 2,
     mode: 'in_person',
     status: 'open',
+    visibility: 'public',
     max_participants: 2,
     travel_allowance: 1,
     cancellation_policy: 'moderate',
@@ -59,30 +61,6 @@ const MOCK_TASKS: Task[] = [
     created_at: subDays(new Date(), 1).toISOString(),
     updated_at: subDays(new Date(), 1).toISOString(),
   },
-  {
-    id: '3',
-    creator_id: 'mock-user-3',
-    type: 'offer',
-    title: 'React & TypeScript Mentorship',
-    description: 'Senior engineer offering code review and mentorship sessions. I can help you debug issues or understand complex concepts.',
-    estimated_credits: 3,
-    mode: 'online',
-    status: 'open',
-    max_participants: 1,
-    travel_allowance: 0,
-    cancellation_policy: 'strict',
-    location_city: null,
-    location_state: null,
-    location_country: null,
-    location_lat: null,
-    location_lng: null,
-    online_platform: 'Google Meet',
-    online_link: null,
-    proposed_times: [],
-    confirmed_time: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
 ];
 export function useTasks(filters?: TaskFilters, userId?: string) {
   return useQuery({
@@ -93,13 +71,8 @@ export function useTasks(filters?: TaskFilters, userId?: string) {
         .select('*, profiles(display_name, reputation_score)')
         .order('created_at', { ascending: false });
       if (userId) {
-        // For dashboard: show tasks where user is creator OR (future) provider
-        // Since we don't have a many-to-many relation easily queryable here without complex joins,
-        // we'll just fetch created tasks for now.
-        // In a real app, we'd query escrows or a participants table.
         query = query.eq('creator_id', userId);
       } else {
-        // Public marketplace: only open tasks
         query = query.eq('status', 'open');
       }
       if (filters) {
@@ -116,9 +89,8 @@ export function useTasks(filters?: TaskFilters, userId?: string) {
       const { data, error } = await query;
       if (error) {
         console.error('Error fetching tasks:', error);
-        // Fallback to mocks if DB is empty or error
         let mocks = MOCK_TASKS;
-        if (userId) mocks = []; // No mocks for specific user dashboard to avoid confusion
+        if (userId) mocks = []; 
         return mocks.filter(t => {
           if (!filters) return true;
           if (filters.type !== 'all' && t.type !== filters.type) return false;
@@ -127,7 +99,6 @@ export function useTasks(filters?: TaskFilters, userId?: string) {
           return true;
         });
       }
-      // Client-side filtering for credits since it's a range
       let result = data as unknown as (Task & { profiles: { display_name: string, reputation_score: number } })[];
       if (filters) {
         result = result.filter(t => t.estimated_credits <= filters.maxCredits && t.estimated_credits >= filters.minCredits);
@@ -140,7 +111,6 @@ export function useTask(id: string) {
   return useQuery({
     queryKey: ['task', id],
     queryFn: async () => {
-      // Check mocks first for demo
       const mock = MOCK_TASKS.find(t => t.id === id);
       if (mock) return { ...mock, profiles: { display_name: 'Mock User', reputation_score: 100 } };
       const { data, error } = await supabase
@@ -154,22 +124,21 @@ export function useTask(id: string) {
     enabled: !!id,
   });
 }
-// Correct type for task creation to avoid 'Partial<Task>' mismatch
 type CreateTaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'proposed_times' | 'confirmed_time'> & {
   creator_id: string;
   proposed_times?: string[] | null;
 };
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (newTask: CreateTaskInput) => {
+  return useMutation<Task, Error, CreateTaskInput>({
+    mutationFn: async (newTask) => {
       const { data, error } = await supabase
         .from('tasks')
-        .insert(newTask as any) // Cast to any to bypass strict Partial<Task> check if needed, or match exact shape
+        .insert(newTask as any)
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -178,30 +147,19 @@ export function useCreateTask() {
 }
 export function useAcceptTask() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ taskId, userId }: { taskId: string; userId: string }) => {
-      // In a real app, this calls a Supabase Edge Function
-      // const { data, error } = await supabase.functions.invoke('accept-task', { body: { taskId, userId } });
-      // Mocking the Edge Function logic:
-      // 1. Check if task exists and is open
-      // 2. Lock credits (create escrow)
-      // 3. Update task status to 'accepted'
+  return useMutation<Escrow, Error, { taskId: string; userId: string }>({
+    mutationFn: async ({ taskId, userId }) => {
       console.log(`Mocking accept task ${taskId} by ${userId}`);
-      // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // Mock DB updates
       const { error: updateError } = await supabase
         .from('tasks')
         .update({ status: 'accepted' } as any)
         .eq('id', taskId);
-      if (updateError) {
-        console.warn('Mock update failed (likely RLS or no DB), proceeding with mock success');
-      }
-      // Return mock escrow object
+      if (updateError) console.warn('Mock update failed, proceeding');
       const mockEscrow: Escrow = {
         id: `escrow-${Date.now()}`,
         task_id: taskId,
-        requester_id: 'req-id', // would be dynamic
+        requester_id: 'req-id',
         provider_id: userId,
         credits_locked: 5,
         credits_released: 0,
@@ -224,8 +182,8 @@ export function useAcceptTask() {
 }
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Task> }) => {
+  return useMutation<Task, Error, { id: string; updates: Partial<Task> }>({
+    mutationFn: async ({ id, updates }) => {
       const { data, error } = await supabase
         .from('tasks')
         .update(updates as any)
@@ -233,7 +191,7 @@ export function useUpdateTask() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Task;
     },
     onSuccess: (data) => {
       if (data) {
@@ -245,11 +203,8 @@ export function useUpdateTask() {
 }
 export function useCheckIn() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (taskId: string) => {
-      // Mock check-in logic
-      // In real app: update metadata or check-in table
-      // Here: update status to in_progress if not already
+  return useMutation<Task, Error, string>({
+    mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
         .update({ status: 'in_progress' } as any)
@@ -257,7 +212,7 @@ export function useCheckIn() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Task;
     },
     onSuccess: (data) => {
       if (data) {
@@ -269,11 +224,8 @@ export function useCheckIn() {
 }
 export function useCompleteTask() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (taskId: string) => {
-      // Mock completion logic
-      // 1. Release escrow (Edge Function)
-      // 2. Update task status to completed
+  return useMutation<Task, Error, string>({
+    mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
         .update({ status: 'completed' } as any)
@@ -281,7 +233,7 @@ export function useCompleteTask() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Task;
     },
     onSuccess: (data) => {
       if (data) {
@@ -289,5 +241,50 @@ export function useCompleteTask() {
       }
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
+  });
+}
+// --- New Mutations for Phase 5 ---
+export function useAddReview() {
+  const queryClient = useQueryClient();
+  return useMutation<Review, Error, Partial<Review>>({
+    mutationFn: async (review) => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert(review)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Review;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Review submitted successfully');
+    },
+  });
+}
+export function useRaiseDispute() {
+  const queryClient = useQueryClient();
+  return useMutation<Dispute, Error, Partial<Dispute>>({
+    mutationFn: async (dispute) => {
+      // 1. Create dispute
+      const { data, error } = await supabase
+        .from('disputes')
+        .insert(dispute)
+        .select()
+        .single();
+      if (error) throw error;
+      // 2. Update escrow status
+      if (dispute.escrow_id) {
+        await supabase
+          .from('escrows')
+          .update({ status: 'disputed', dispute_id: data.id })
+          .eq('id', dispute.escrow_id);
+      }
+      return data as Dispute;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Dispute raised. Admin will review shortly.');
+    },
   });
 }

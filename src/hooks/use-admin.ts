@@ -1,24 +1,9 @@
-import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { Profile, Dispute, Review, Notification, ProfileUpdate, DisputeUpdate, ReviewUpdate, NotificationUpdate, Json, DisputeStatus } from '@/types/database';
+import { supabase } from '@/lib/supabase';
+import { Profile, Dispute, Review, Notification } from '@/types/database';
 import { toast } from 'sonner';
 // --- User Management ---
 export function useUnapprovedUsers() {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const channel = supabase.channel('admin-profiles')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'users', 'unapproved'],
     queryFn: async () => {
@@ -36,19 +21,11 @@ export function useApproveUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (userId: string) => {
-      if (!userId) throw new Error('User ID required');
-      try {
-        // Use admin client to bypass RLS
-        const updatePayload: ProfileUpdate = { is_approved: true };
-        const { error } = await supabaseAdmin
-          .from('profiles')
-          .update(updatePayload)
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (error) {
-        console.error('Approve user error:', error);
-        throw error;
-      }
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_approved: true })
+        .eq('id', userId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -63,46 +40,25 @@ export function useRejectUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (userId: string) => {
-      if (!userId) throw new Error('User ID required');
-      try {
-        const updatePayload: ProfileUpdate = { is_suspended: true };
-        const { error } = await supabaseAdmin
-          .from('profiles')
-          .update(updatePayload)
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (error) {
-        console.error('Reject user error:', error);
-        throw error;
-      }
+      // In a real app, maybe delete or mark as rejected. Here we'll just suspend/hide.
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_suspended: true }) // Or delete
+        .eq('id', userId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('User rejected/suspended');
     },
-    onError: (error) => {
-      toast.error(`Failed to reject user: ${error.message}`);
-    }
   });
 }
 // --- Dispute Management ---
 export function useDisputes() {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const channel = supabase.channel('admin-disputes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'disputes'],
     queryFn: async () => {
-      // Use admin client to ensure we see ALL disputes regardless of RLS
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('disputes')
         .select('*, escrows(*, tasks(*))')
         .order('created_at', { ascending: false });
@@ -114,51 +70,30 @@ export function useDisputes() {
 export function useResolveDispute() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ disputeId, decision, payload }: { disputeId: string, decision: string, payload: { splitPercentage?: number; notes?: string } }) => {
-      if (!disputeId) throw new Error('Dispute ID required');
-      try {
-        // 1. Update dispute status
-        const updatePayload: DisputeUpdate = {
-            status: 'resolved' as DisputeStatus,
-            admin_decision: decision,
-            admin_decision_payload: payload as unknown as Json,
-            resolved_at: new Date().toISOString()
-        };
-        const { error: disputeError } = await supabaseAdmin
-          .from('disputes')
-          .update(updatePayload)
-          .eq('id', disputeId);
-        if (disputeError) throw disputeError;
-        // 2. In a real app, trigger Edge Function to actually move credits based on decision
-        // Here we mock the escrow update
-        // const { error: escrowError } = await supabase.from('escrows').update({ status: 'released' })...
-      } catch (error) {
-        console.error('Resolve dispute error:', error);
-        throw error;
-      }
+    mutationFn: async ({ disputeId, decision, payload }: { disputeId: string, decision: string, payload: any }) => {
+      // 1. Update dispute status
+      const { error: disputeError } = await supabase
+        .from('disputes')
+        .update({ 
+          status: 'resolved', 
+          admin_decision: decision,
+          admin_decision_payload: payload,
+          resolved_at: new Date().toISOString()
+        })
+        .eq('id', disputeId);
+      if (disputeError) throw disputeError;
+      // 2. In a real app, trigger Edge Function to actually move credits based on decision
+      // Here we mock the escrow update
+      // const { error: escrowError } = await supabase.from('escrows').update({ status: 'released' })...
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
       toast.success('Dispute resolved');
     },
-    onError: (error) => {
-      toast.error(`Failed to resolve dispute: ${error.message}`);
-    }
   });
 }
 // --- Review Moderation ---
 export function useAdminReviews() {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const channel = supabase.channel('admin-reviews')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'reviews'],
     queryFn: async () => {
@@ -175,42 +110,20 @@ export function useModerateReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ reviewId, isHidden }: { reviewId: string, isHidden: boolean }) => {
-      if (!reviewId) throw new Error('Review ID required');
-      try {
-        const updatePayload: ReviewUpdate = { is_hidden: isHidden };
-        const { error } = await supabaseAdmin
-          .from('reviews')
-          .update(updatePayload)
-          .eq('id', reviewId);
-        if (error) throw error;
-      } catch (error) {
-        console.error('Moderate review error:', error);
-        throw error;
-      }
+      const { error } = await supabase
+        .from('reviews')
+        .update({ is_hidden: isHidden })
+        .eq('id', reviewId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
       toast.success('Review updated');
     },
-    onError: (error) => {
-      toast.error(`Failed to update review: ${error.message}`);
-    }
   });
 }
 // --- Notifications ---
 export function useNotifications(userId?: string) {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase.channel('notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, queryClient]);
   return useQuery({
     queryKey: ['notifications', userId],
     queryFn: async () => {
@@ -231,25 +144,15 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      if (!notificationId) throw new Error('Notification ID required');
-      try {
-        const updatePayload: NotificationUpdate = { is_read: true };
-        const { error } = await supabase
-          .from('notifications')
-          .update(updatePayload)
-          .eq('id', notificationId);
-        if (error) throw error;
-      } catch (error) {
-        console.error('Mark notification read error:', error);
-        throw error;
-      }
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
-    onError: (error) => {
-      console.error('Failed to mark notification as read:', error);
-    }
   });
 }
 // --- Stats ---

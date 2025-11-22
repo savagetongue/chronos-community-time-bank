@@ -1,17 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Clock, Activity } from 'lucide-react';
+import { Wallet, TrendingUp, Clock, Activity, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTasks } from '@/hooks/use-tasks';
 import { SessionCard } from '@/components/session-card';
+import { NotificationCenter } from '@/components/admin/notification-center';
 export function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
-  // Fetch active tasks for the dashboard
   const { data: activeTasks, isLoading: tasksLoading } = useTasks(undefined, user?.id);
   const container = {
     hidden: { opacity: 0 },
@@ -40,13 +40,16 @@ export function DashboardHome() {
   }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {profile?.display_name || user?.email?.split('@')[0]}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Here's what's happening with your time bank account today.
-        </p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {profile?.display_name || user?.email?.split('@')[0]}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here's what's happening with your time bank account today.
+          </p>
+        </div>
+        <NotificationCenter />
       </div>
       <motion.div
         variants={container}
@@ -115,6 +118,7 @@ export function DashboardHome() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="active">Active Tasks</TabsTrigger>
+          <TabsTrigger value="reviews">My Reviews</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
@@ -149,10 +153,10 @@ export function DashboardHome() {
           ) : activeTasks && activeTasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activeTasks.map(task => (
-                <SessionCard 
-                  key={task.id} 
-                  task={task} 
-                  isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id} 
+                <SessionCard
+                  key={task.id}
+                  task={task}
+                  isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id}
                 />
               ))}
             </div>
@@ -163,6 +167,19 @@ export function DashboardHome() {
               <p className="text-muted-foreground mb-6">You haven't posted or accepted any tasks yet.</p>
             </div>
           )}
+        </TabsContent>
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reviews Received</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                <Star className="mx-auto h-12 w-12 mb-4 opacity-20" />
+                <p>Complete tasks to earn reviews and build your reputation.</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

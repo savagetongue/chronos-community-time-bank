@@ -78,6 +78,7 @@ export function TaskCreate() {
         ...data,
         creator_id: user.id,
         status: 'open',
+        visibility: 'public',
         max_participants: 1,
         travel_allowance: 0,
         cancellation_policy: 'flexible',
@@ -89,7 +90,6 @@ export function TaskCreate() {
         location_lng: null,
         online_link: null,
         proposed_times: null,
-        // confirmed_time is omitted as it's not in CreateTaskInput
       });
       toast.success('Task created successfully!');
       navigate('/explore');
@@ -108,7 +108,6 @@ export function TaskCreate() {
   }
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
-      {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex justify-between items-center relative">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-secondary -z-10" />
