@@ -77,12 +77,7 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [
-    "bun add @supabase/supabase-js@^2.45.4",
-    "bun add @supabase/supabase-js",
-    "bun add jszip",
-    "bun add @googlemaps/react-wrapper"
-];
+    const commands = [];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
