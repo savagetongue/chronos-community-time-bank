@@ -74,17 +74,17 @@ export interface ProfileInsert {
   display_name?: string | null;
   email: string;
   bio?: string | null;
-  skills?: string[];
-  credits?: number;
-  locked_credits?: number;
-  reputation_score?: number;
-  completed_tasks_count?: number;
-  is_approved?: boolean;
-  is_suspended?: boolean;
-  is_admin?: boolean;
-  kyc_level?: number;
-  created_at?: string;
-  updated_at?: string;
+  skills?: string[] | null;
+  credits?: number | null;
+  locked_credits?: number | null;
+  reputation_score?: number | null;
+  completed_tasks_count?: number | null;
+  is_approved?: boolean | null;
+  is_suspended?: boolean | null;
+  is_admin?: boolean | null;
+  kyc_level?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
 // --- Tasks ---
@@ -125,11 +125,11 @@ export interface TaskInsert {
   description: string;
   estimated_credits: number;
   mode: TaskMode;
-  status?: TaskStatus;
-  visibility?: TaskVisibility;
-  max_participants?: number;
-  travel_allowance?: number;
-  cancellation_policy?: string;
+  status?: TaskStatus | null;
+  visibility?: TaskVisibility | null;
+  max_participants?: number | null;
+  travel_allowance?: number | null;
+  cancellation_policy?: string | null;
   location_city?: string | null;
   location_state?: string | null;
   location_country?: string | null;
@@ -139,8 +139,8 @@ export interface TaskInsert {
   online_link?: string | null;
   proposed_times?: string[] | null;
   confirmed_time?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at' | 'updated_at'>>;
 // --- Escrows ---
@@ -166,14 +166,14 @@ export interface EscrowInsert {
   requester_id: string;
   provider_id: string;
   credits_locked: number;
-  credits_released?: number;
-  status?: EscrowStatus;
-  locked_at?: string;
+  credits_released?: number | null;
+  status?: EscrowStatus | null;
+  locked_at?: string | null;
   auto_release_at?: string | null;
   released_at?: string | null;
   dispute_id?: string | null;
-  is_finalized?: boolean;
-  created_at?: string;
+  is_finalized?: boolean | null;
+  created_at?: string | null;
 }
 export type EscrowUpdate = Partial<Omit<Escrow, 'id' | 'created_at'>>;
 // --- Reviews ---
@@ -199,11 +199,11 @@ export interface ReviewInsert {
   rating: number;
   title?: string | null;
   comment?: string | null;
-  tags?: string[];
-  is_anonymous?: boolean;
+  tags?: string[] | null;
+  is_anonymous?: boolean | null;
   reply_id?: string | null;
-  is_hidden?: boolean;
-  created_at?: string;
+  is_hidden?: boolean | null;
+  created_at?: string | null;
 }
 export type ReviewUpdate = Partial<Omit<Review, 'id' | 'created_at'>>;
 // --- Disputes ---
@@ -230,13 +230,13 @@ export interface DisputeInsert {
   raised_by: string;
   reason: DisputeReason;
   details: string;
-  evidence?: string[];
-  status?: DisputeStatus;
+  evidence?: string[] | null;
+  status?: DisputeStatus | null;
   admin_decision?: string | null;
   admin_decision_payload?: Json | null;
   deadline_at?: string | null;
   decided_at?: string | null;
-  created_at?: string;
+  created_at?: string | null;
   resolved_at?: string | null;
 }
 export type DisputeUpdate = Partial<Omit<Dispute, 'id' | 'created_at'>>;
@@ -264,7 +264,7 @@ export interface TransactionInsert {
   escrow_id?: string | null;
   task_id?: string | null;
   meta?: Json | null;
-  created_at?: string;
+  created_at?: string | null;
 }
 export type TransactionUpdate = Partial<Omit<Transaction, 'id' | 'created_at'>>;
 // --- Notifications ---
@@ -280,9 +280,9 @@ export interface NotificationInsert {
   id?: string;
   user_id: string;
   type: string;
-  payload?: Json;
-  is_read?: boolean;
-  created_at?: string;
+  payload?: Json | null;
+  is_read?: boolean | null;
+  created_at?: string | null;
 }
 export type NotificationUpdate = Partial<Omit<Notification, 'id' | 'created_at'>>;
 // --- Files ---
@@ -306,6 +306,6 @@ export interface FileRecordInsert {
   file_hash?: string | null;
   size_bytes: number;
   mime_type: string;
-  uploaded_at?: string;
+  uploaded_at?: string | null;
 }
 export type FileRecordUpdate = Partial<Omit<FileRecord, 'id' | 'created_at'>>;

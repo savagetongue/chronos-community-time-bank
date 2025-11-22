@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert, EscrowUpdate } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -159,9 +159,10 @@ export function useAcceptTask() {
       // In a real app, this would be an Edge Function call
       // supabase.functions.invoke('accept-task', { body: { taskId, userId } })
       // For now, we manually update the task status
+      const updateData: TaskUpdate = { status: 'accepted' };
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'accepted' })
+        .update(updateData)
         .eq('id', taskId);
       if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
       // Create a real escrow record if possible, otherwise mock
@@ -227,9 +228,10 @@ export function useCheckIn() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
+      const updateData: TaskUpdate = { status: 'in_progress' };
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'in_progress' })
+        .update(updateData)
         .eq('id', taskId)
         .select()
         .single();
@@ -250,9 +252,10 @@ export function useCompleteTask() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
+      const updateData: TaskUpdate = { status: 'completed' };
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'completed' })
+        .update(updateData)
         .eq('id', taskId)
         .select()
         .single();
@@ -313,9 +316,10 @@ export function useRaiseDispute() {
       if (error) throw error;
       if (!data) throw new Error('No data returned from dispute creation');
       if (dispute.escrow_id) {
+        const updateData: EscrowUpdate = { status: 'disputed', dispute_id: data.id };
         await supabase
           .from('escrows')
-          .update({ status: 'disputed', dispute_id: data.id })
+          .update(updateData)
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;
