@@ -32,7 +32,7 @@ const taskSchema = z.object({
   type: z.enum(['offer', 'request']),
   title: z.string().min(5, 'Title must be at least 5 characters').max(100),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  estimated_credits: z.number().min(1).max(20),
+  estimated_credits: z.coerce.number().min(1).max(20),
   mode: z.enum(['online', 'in_person', 'hybrid']),
   location_city: z.string().optional(),
   online_platform: z.string().optional(),
@@ -56,8 +56,6 @@ export function TaskCreate() {
       description: '',
       estimated_credits: 1,
       mode: 'online',
-      location_city: '',
-      online_platform: '',
     },
     mode: 'onChange',
   });
@@ -78,19 +76,9 @@ export function TaskCreate() {
         ...data,
         creator_id: user.id,
         status: 'open',
-        visibility: 'public',
         max_participants: 1,
         travel_allowance: 0,
         cancellation_policy: 'flexible',
-        location_city: data.location_city || null,
-        online_platform: data.online_platform || null,
-        location_state: null,
-        location_country: null,
-        location_lat: null,
-        location_lng: null,
-        online_link: null,
-        proposed_times: null,
-        confirmed_time: null
       });
       toast.success('Task created successfully!');
       navigate('/explore');
@@ -109,6 +97,7 @@ export function TaskCreate() {
   }
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
+      {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex justify-between items-center relative">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-secondary -z-10" />
@@ -206,13 +195,7 @@ export function TaskCreate() {
                         <FormItem>
                           <FormLabel>Estimated Credits (Hours)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              min={1} 
-                              max={20} 
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
+                            <Input type="number" min={1} max={20} {...field} />
                           </FormControl>
                           <FormDescription>
                             1 Credit = 1 Hour of time.

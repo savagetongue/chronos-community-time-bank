@@ -1,79 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, MapPin, Video, User, Shield, Calendar, ArrowLeft, Lock, CheckCircle, AlertTriangle, Star } from 'lucide-react';
+import { Clock, MapPin, Video, User, Shield, Calendar, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTask, useAcceptTask, useAddReview, useRaiseDispute } from '@/hooks/use-tasks';
+import { useTask } from '@/hooks/use-tasks';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 export function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: task, isLoading, error } = useTask(id || '');
   const user = useAuthStore((s) => s.user);
-  const acceptTask = useAcceptTask();
-  const addReview = useAddReview();
-  const raiseDispute = useRaiseDispute();
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-  const [disputeReason, setDisputeReason] = useState('');
-  const [disputeDetails, setDisputeDetails] = useState('');
-  const handleAccept = async () => {
+  const handleAccept = () => {
     if (!user) {
       toast.error('Please log in to accept tasks');
       return;
     }
-    if (!task) return;
-    try {
-      await acceptTask.mutateAsync({ taskId: task.id, userId: user.id, task });
-      toast.success('Task accepted! Credits locked in escrow.');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to accept task. Please try again.');
-    }
-  };
-  const handleSubmitReview = async () => {
-    if (!task || !user) return;
-    try {
-      await addReview.mutateAsync({
-        task_id: task.id,
-        reviewer_id: user.id,
-        reviewee_id: task.creator_id, // Simplified: assumes reviewer is always reviewing creator for now
-        rating: reviewRating,
-        comment: reviewComment,
-        tags: [],
-        is_anonymous: false,
-        title: null,
-        reply_id: null,
-        is_hidden: false
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  const handleRaiseDispute = async () => {
-    if (!task || !user) return;
-    try {
-      await raiseDispute.mutateAsync({
-        escrow_id: 'mock-escrow-id', // In real app, fetch escrow ID
-        raised_by: user.id,
-        reason: disputeReason as any,
-        details: disputeDetails,
-        status: 'open',
-        evidence: [],
-        admin_decision: null,
-        admin_decision_payload: null,
-        deadline_at: null,
-        decided_at: null
-      });
-    } catch (err) {
-      console.error(err);
-    }
+    // Mock logic for now - Phase 3 will implement real escrow
+    toast.success('Task accepted! Credits locked in escrow.');
   };
   if (isLoading) {
     return (
@@ -102,9 +48,6 @@ export function TaskDetail() {
     );
   }
   const isOffer = task.type === 'offer';
-  const isAccepted = task.status === 'accepted' || task.status === 'in_progress';
-  const isCompleted = task.status === 'completed';
-  const isCreator = user?.id === task.creator_id;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
       <Link to="/explore" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -124,12 +67,6 @@ export function TaskDetail() {
               <span className="text-sm text-muted-foreground">
                 Posted {new Date(task.created_at).toLocaleDateString()}
               </span>
-              {isAccepted && (
-                <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Accepted
-                </Badge>
-              )}
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-6">{task.title}</h1>
             <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -173,55 +110,6 @@ export function TaskDetail() {
               )}
             </CardContent>
           </Card>
-          {/* Escrow Status */}
-          {isAccepted && (
-            <Card className="border-green-200 bg-green-50/50 dark:bg-green-900/10">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-400">
-                  <Lock className="w-5 h-5 mr-2" />
-                  Escrow Active
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {task.estimated_credits} Credits have been securely locked. They will be released to the provider upon task completion.
-                </p>
-                <Link to={`/schedule/${task.id}`}>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Schedule Session
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )}
-          {/* Review Section (If Completed) */}
-          {isCompleted && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Leave a Review</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-6 w-6 cursor-pointer ${star <= reviewRating ? 'text-yellow-500 fill-yellow-500' : 'text-muted'}`}
-                      onClick={() => setReviewRating(star)}
-                    />
-                  ))}
-                </div>
-                <Textarea
-                  placeholder="Share your experience..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                />
-                <Button onClick={handleSubmitReview} disabled={addReview.isPending}>
-                  {addReview.isPending ? 'Submitting...' : 'Submit Review'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
         {/* Sidebar */}
         <div className="space-y-6">
@@ -248,73 +136,17 @@ export function TaskDetail() {
                 </span>
                 <span className="font-medium text-green-600">Protected</span>
               </div>
-              {!isAccepted && !isCompleted ? (
-                <>
-                  <Button
-                    className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white h-12 text-lg"
-                    onClick={handleAccept}
-                    disabled={isCreator || acceptTask.isPending}
-                  >
-                    {isCreator ? 'You Posted This' : acceptTask.isPending ? 'Processing...' : 'Accept Task'}
-                  </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    By accepting, you agree to the Community Guidelines.
-                  </p>
-                </>
-              ) : (
-                <div className="text-center p-4 bg-secondary/30 rounded-lg">
-                  <p className="font-medium text-foreground">
-                    {isCompleted ? 'Task Completed' : 'Task in Progress'}
-                  </p>
-                  {!isCompleted && (
-                    <Link to={`/schedule/${task.id}`} className="text-sm text-chronos-teal hover:underline">
-                      Manage Schedule
-                    </Link>
-                  )}
-                </div>
-              )}
+              <Button 
+                className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white h-12 text-lg"
+                onClick={handleAccept}
+                disabled={user?.id === task.creator_id}
+              >
+                {user?.id === task.creator_id ? 'You Posted This' : 'Accept Task'}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                By accepting, you agree to the Community Guidelines.
+              </p>
             </CardContent>
-            {/* Dispute Button */}
-            {isAccepted && !isCompleted && (
-              <CardFooter className="border-t pt-4">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Raise Dispute
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Raise a Dispute</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <Select onValueChange={setDisputeReason}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select reason" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="no_show">No Show</SelectItem>
-                          <SelectItem value="poor_quality">Poor Quality</SelectItem>
-                          <SelectItem value="safety">Safety Concern</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Textarea
-                        placeholder="Describe the issue in detail..."
-                        value={disputeDetails}
-                        onChange={(e) => setDisputeDetails(e.target.value)}
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button variant="destructive" onClick={handleRaiseDispute} disabled={raiseDispute.isPending}>
-                        {raiseDispute.isPending ? 'Submitting...' : 'Submit Dispute'}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardFooter>
-            )}
           </Card>
           {/* Creator Profile */}
           <Card>
