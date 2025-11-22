@@ -47,7 +47,7 @@ export const AdminRoute = ({ children }: { children: JSX.Element }) => {
   const isLoading = useAuthStore((s) => s.isLoading);
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   // Hardcoded admin check per client request
-  if (!user || user.email !== 'admin@gmail.com') {
+  if (!user || user.email !== 'anandbhagyawant8719@gmail.com') {
     return <Navigate to="/dashboard" replace />;
   }
   return children;

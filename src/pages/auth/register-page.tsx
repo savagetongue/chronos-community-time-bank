@@ -70,7 +70,7 @@ export function RegisterPage() {
           .eq('id', authData.user.id)
           .single();
         // Admin Auto-Approval Logic
-        if (authData.user.email === 'admin@gmail.com') {
+        if (authData.user.email === 'anandbhagyawant8719@gmail.com') {
           try {
             const { error: adminUpdateError } = await supabaseAdmin
               .from('profiles')
