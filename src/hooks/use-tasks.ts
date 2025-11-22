@@ -199,8 +199,7 @@ export function useAcceptTask() {
           } as Escrow;
       }
       // Update task status
-      const taskUpdate: TaskUpdate = { status: 'accepted' };
-      await supabase.from('tasks').update(taskUpdate).eq('id', taskId);
+      await supabase.from('tasks').update({ status: 'accepted' }).eq('id', taskId);
       return escrow as Escrow;
     },
     onSuccess: (_, variables) => {
@@ -238,10 +237,9 @@ export function useCheckIn() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
-      const updateData: TaskUpdate = { status: 'in_progress' };
       const { data, error } = await supabase
         .from('tasks')
-        .update(updateData)
+        .update({ status: 'in_progress' })
         .eq('id', taskId)
         .select()
         .single();
@@ -262,10 +260,9 @@ export function useCompleteTask() {
   return useMutation<Task, Error, string>({
     mutationFn: async (taskId) => {
       if (!taskId) throw new Error('Task ID required');
-      const updateData: TaskUpdate = { status: 'completed' };
       const { data, error } = await supabase
         .from('tasks')
-        .update(updateData)
+        .update({ status: 'completed' })
         .eq('id', taskId)
         .select()
         .single();
@@ -339,10 +336,9 @@ export function useRaiseDispute() {
       if (error) throw error;
       if (!data) throw new Error('No data returned from dispute creation');
       if (dispute.escrow_id) {
-        const updateData: EscrowUpdate = { status: 'disputed', dispute_id: data.id };
         await supabase
           .from('escrows')
-          .update(updateData)
+          .update({ status: 'disputed', dispute_id: data.id })
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;

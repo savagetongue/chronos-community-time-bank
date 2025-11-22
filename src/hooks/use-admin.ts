@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { Profile, Dispute, Review, Notification, ProfileUpdate, DisputeUpdate, ReviewUpdate, NotificationUpdate } from '@/types/database';
+import { Profile, Dispute, Review, Notification } from '@/types/database';
 import { toast } from 'sonner';
 // --- User Management ---
 export function useUnapprovedUsers() {
@@ -39,10 +39,9 @@ export function useApproveUser() {
       if (!userId) throw new Error('User ID required');
       try {
         // Use admin client to bypass RLS
-        const updateData: ProfileUpdate = { is_approved: true };
         const { error } = await supabaseAdmin
           .from('profiles')
-          .update(updateData)
+          .update({ is_approved: true })
           .eq('id', userId);
         if (error) throw error;
       } catch (error) {
@@ -65,10 +64,9 @@ export function useRejectUser() {
     mutationFn: async (userId: string) => {
       if (!userId) throw new Error('User ID required');
       try {
-        const updateData: ProfileUpdate = { is_suspended: true };
         const { error } = await supabaseAdmin
           .from('profiles')
-          .update(updateData)
+          .update({ is_suspended: true })
           .eq('id', userId);
         if (error) throw error;
       } catch (error) {
@@ -118,15 +116,14 @@ export function useResolveDispute() {
       if (!disputeId) throw new Error('Dispute ID required');
       try {
         // 1. Update dispute status
-        const updateData: DisputeUpdate = {
-          status: 'resolved',
-          admin_decision: decision,
-          admin_decision_payload: payload,
-          resolved_at: new Date().toISOString()
-        };
         const { error: disputeError } = await supabaseAdmin
           .from('disputes')
-          .update(updateData)
+          .update({
+            status: 'resolved',
+            admin_decision: decision,
+            admin_decision_payload: payload,
+            resolved_at: new Date().toISOString()
+          })
           .eq('id', disputeId);
         if (disputeError) throw disputeError;
         // 2. In a real app, trigger Edge Function to actually move credits based on decision
@@ -177,10 +174,9 @@ export function useModerateReview() {
     mutationFn: async ({ reviewId, isHidden }: { reviewId: string, isHidden: boolean }) => {
       if (!reviewId) throw new Error('Review ID required');
       try {
-        const updateData: ReviewUpdate = { is_hidden: isHidden };
         const { error } = await supabaseAdmin
           .from('reviews')
-          .update(updateData)
+          .update({ is_hidden: isHidden })
           .eq('id', reviewId);
         if (error) throw error;
       } catch (error) {
@@ -221,10 +217,9 @@ export function useMarkNotificationRead() {
     mutationFn: async (notificationId: string) => {
       if (!notificationId) throw new Error('Notification ID required');
       try {
-        const updateData: NotificationUpdate = { is_read: true };
         const { error } = await supabase
           .from('notifications')
-          .update(updateData)
+          .update({ is_read: true })
           .eq('id', notificationId);
         if (error) throw error;
       } catch (error) {
