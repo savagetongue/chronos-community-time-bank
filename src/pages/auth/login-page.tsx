@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
@@ -48,13 +49,21 @@ export function LoginPage() {
     } catch (err) {
       if (err instanceof Error) {
         // Map Supabase errors to user-friendly messages
-        if (err.message.includes('Invalid login credentials')) {
+        const msg = err.message.toLowerCase();
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const isPlaceholder = !supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey.includes('placeholder');
+        if (msg.includes('invalid login credentials')) {
           setError('Invalid email or password. Please try again.');
+        } else if (msg.includes('network') || msg.includes('fetch') || isPlaceholder) {
+          setError('Please configure your Supabase URL and key in environment variables to enable login.');
         } else {
           setError(err.message);
         }
+        toast.error(err.message);
       } else {
         setError('An unknown error occurred');
+        toast.error('An unknown error occurred');
       }
     } finally {
       setIsLoading(false);
@@ -142,6 +151,9 @@ export function LoginPage() {
                 </Button>
               </form>
             </Form>
+            <div className="mt-4 p-3 bg-secondary/50 rounded text-xs text-muted-foreground">
+              Note: In sandbox mode, use mock credentials (e.g., test@example.com / password123) as Supabase is placeholder-configured.
+            </div>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Don't have an account?{' '}
