@@ -89,8 +89,7 @@ export function RegisterPage() {
         }
         if (!existingProfile) {
           // Fallback: Create profile manually if trigger failed
-          // Use Partial<ProfileInsert> with only core fields to avoid schema mismatch errors
-          const profileData: Partial<ProfileInsert> = {
+          const profileData: ProfileInsert = {
             id: authData.user.id,
             email: data.email,
             display_name: data.name,
@@ -101,12 +100,11 @@ export function RegisterPage() {
             completed_tasks_count: 0,
             is_suspended: false,
             kyc_level: 0,
-            // Explicitly omit optional fields that might cause issues if schema is out of sync
           };
           try {
             const { error: profileError } = await supabase
               .from('profiles')
-              .insert([profileData as ProfileInsert]); // Cast to ProfileInsert to satisfy type checker, but we know it's partial
+              .insert([profileData]);
             if (profileError) {
               console.error('Profile creation fallback failed:', profileError);
               // Don't block success if auth worked, but warn
