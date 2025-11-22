@@ -23,7 +23,7 @@ export function useApproveUser() {
     mutationFn: async (userId: string) => {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_approved: true })
+        .update({ is_approved: true } as any)
         .eq('id', userId);
       if (error) throw error;
     },
@@ -43,7 +43,7 @@ export function useRejectUser() {
       // In a real app, maybe delete or mark as rejected. Here we'll just suspend/hide.
       const { error } = await supabase
         .from('profiles')
-        .update({ is_suspended: true }) // Or delete
+        .update({ is_suspended: true } as any) // Or delete
         .eq('id', userId);
       if (error) throw error;
     },
@@ -76,10 +76,10 @@ export function useResolveDispute() {
         .from('disputes')
         .update({ 
           status: 'resolved', 
-          admin_decision: decision,
+          admin_decision: decision, 
           admin_decision_payload: payload,
           resolved_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', disputeId);
       if (disputeError) throw disputeError;
       // 2. In a real app, trigger Edge Function to actually move credits based on decision
@@ -112,7 +112,7 @@ export function useModerateReview() {
     mutationFn: async ({ reviewId, isHidden }: { reviewId: string, isHidden: boolean }) => {
       const { error } = await supabase
         .from('reviews')
-        .update({ is_hidden: isHidden })
+        .update({ is_hidden: isHidden } as any)
         .eq('id', reviewId);
       if (error) throw error;
     },
@@ -146,7 +146,7 @@ export function useMarkNotificationRead() {
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ is_read: true } as any)
         .eq('id', notificationId);
       if (error) throw error;
     },

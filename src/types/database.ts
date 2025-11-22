@@ -3,42 +3,42 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Partial<Profile>;
+        Insert: Omit<Profile, 'created_at' | 'updated_at'>;
         Update: Partial<Profile>;
       };
       tasks: {
         Row: Task;
-        Insert: Partial<Task>;
+        Insert: Omit<Task, 'id' | 'created_at' | 'updated_at'> & Partial<Pick<Task, 'id'>>;
         Update: Partial<Task>;
       };
       escrows: {
         Row: Escrow;
-        Insert: Partial<Escrow>;
+        Insert: Omit<Escrow, 'id' | 'created_at'> & Partial<Pick<Escrow, 'id'>>;
         Update: Partial<Escrow>;
       };
       reviews: {
         Row: Review;
-        Insert: Partial<Review>;
+        Insert: Omit<Review, 'id' | 'created_at'> & Partial<Pick<Review, 'id'>>;
         Update: Partial<Review>;
       };
       disputes: {
         Row: Dispute;
-        Insert: Partial<Dispute>;
+        Insert: Omit<Dispute, 'id' | 'created_at' | 'resolved_at'> & Partial<Pick<Dispute, 'id'>>;
         Update: Partial<Dispute>;
       };
       transactions: {
         Row: Transaction;
-        Insert: Partial<Transaction>;
+        Insert: Omit<Transaction, 'id' | 'created_at'> & Partial<Pick<Transaction, 'id'>>;
         Update: Partial<Transaction>;
       };
       notifications: {
         Row: Notification;
-        Insert: Partial<Notification>;
+        Insert: Omit<Notification, 'id' | 'created_at'> & Partial<Pick<Notification, 'id'>>;
         Update: Partial<Notification>;
       };
       files: {
         Row: FileRecord;
-        Insert: Partial<FileRecord>;
+        Insert: Omit<FileRecord, 'id' | 'uploaded_at'> & Partial<Pick<FileRecord, 'id'>>;
         Update: Partial<FileRecord>;
       };
     };
@@ -56,7 +56,7 @@ export interface Profile {
   completed_tasks_count: number;
   is_approved: boolean;
   is_suspended: boolean;
-  is_admin?: boolean; // Added for admin role check
+  is_admin?: boolean;
   kyc_level: number;
   created_at: string;
   updated_at: string;
@@ -85,7 +85,7 @@ export interface Task {
   location_lng: number | null;
   online_platform: string | null;
   online_link: string | null;
-  proposed_times: string[] | null; // JSON array of ISO strings
+  proposed_times: string[] | null;
   confirmed_time: string | null;
   created_at: string;
   updated_at: string;
@@ -116,8 +116,8 @@ export interface Review {
   comment: string | null;
   tags: string[];
   is_anonymous: boolean;
-  reply_id: string | null; // For replies to reviews
-  is_hidden?: boolean; // For moderation
+  reply_id: string | null;
+  is_hidden?: boolean;
   created_at: string;
 }
 export type DisputeReason = 'not_completed' | 'no_show' | 'poor_quality' | 'safety' | 'fraud' | 'unauthorized_recording' | 'other';
@@ -128,10 +128,10 @@ export interface Dispute {
   raised_by: string;
   reason: DisputeReason;
   details: string;
-  evidence: string[]; // Array of file URLs or IDs
+  evidence: string[];
   status: DisputeStatus;
   admin_decision: string | null;
-  admin_decision_payload: any | null; // JSON
+  admin_decision_payload: any | null;
   created_at: string;
   resolved_at: string | null;
 }
@@ -145,14 +145,14 @@ export interface Transaction {
   balance_after: number;
   escrow_id: string | null;
   task_id: string | null;
-  meta: any | null; // JSON
+  meta: any | null;
   created_at: string;
 }
 export interface Notification {
   id: string;
   user_id: string;
   type: string;
-  payload: any; // JSON
+  payload: any;
   is_read: boolean;
   created_at: string;
 }
