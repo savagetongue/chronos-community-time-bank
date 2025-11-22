@@ -162,7 +162,7 @@ export function useAcceptTask() {
       // For now, we manually update the task status
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted' } as Database['public']['Tables']['tasks']['Update'])
         .eq('id', taskId);
       if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
       // Return a mock escrow object
@@ -196,7 +196,7 @@ export function useUpdateTask() {
     mutationFn: async ({ id, updates }) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(updates as Database['public']['Tables']['tasks']['Update'])
         .eq('id', id)
         .select()
         .single();
@@ -218,7 +218,7 @@ export function useCheckIn() {
     mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'in_progress' })
+        .update({ status: 'in_progress' } as Database['public']['Tables']['tasks']['Update'])
         .eq('id', taskId)
         .select()
         .single();
@@ -240,7 +240,7 @@ export function useCompleteTask() {
     mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'completed' })
+        .update({ status: 'completed' } as Database['public']['Tables']['tasks']['Update'])
         .eq('id', taskId)
         .select()
         .single();
@@ -294,7 +294,7 @@ export function useRaiseDispute() {
       if (dispute.escrow_id) {
         await supabase
           .from('escrows')
-          .update({ status: 'disputed', dispute_id: data.id })
+          .update({ status: 'disputed', dispute_id: data.id } as Database['public']['Tables']['escrows']['Update'])
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;
