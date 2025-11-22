@@ -79,7 +79,8 @@ function updateWranglerJsonc() {
 function runSetupCommands() {
     const commands = [
     "bun add @supabase/supabase-js@^2.45.4",
-    "bun add @supabase/supabase-js"
+    "bun add @supabase/supabase-js",
+    "bun add jszip"
 ];
     
     if (commands.length === 0) {
