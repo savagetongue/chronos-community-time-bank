@@ -5,6 +5,7 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
+  | undefined;
 export interface Database {
   public: {
     Tables: {
@@ -51,9 +52,10 @@ export interface Database {
     };
   };
 }
-// Helper to make all properties nullable for Update types
-type Nullable<T> = {
-  [P in keyof T]: T[P] | null;
+// Helper to make all properties optional and nullable for Update types
+// This ensures compatibility with Supabase's Partial<T> expectation
+type UpdateType<T> = {
+  [P in keyof T]?: T[P] | null | undefined;
 };
 // --- Profiles ---
 export interface Profile {
@@ -74,21 +76,21 @@ export interface Profile {
 }
 export interface ProfileInsert {
   id: string;
-  display_name?: string | null;
+  display_name?: string | null | undefined;
   email: string;
-  bio?: string | null;
-  skills?: string[] | null;
-  credits?: number | null;
-  locked_credits?: number | null;
-  reputation_score?: number | null;
-  completed_tasks_count?: number | null;
-  is_approved?: boolean | null;
-  is_suspended?: boolean | null;
-  kyc_level?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  bio?: string | null | undefined;
+  skills?: string[] | null | undefined;
+  credits?: number | null | undefined;
+  locked_credits?: number | null | undefined;
+  reputation_score?: number | null | undefined;
+  completed_tasks_count?: number | null | undefined;
+  is_approved?: boolean | null | undefined;
+  is_suspended?: boolean | null | undefined;
+  kyc_level?: number | null | undefined;
+  created_at?: string | null | undefined;
+  updated_at?: string | null | undefined;
 }
-export type ProfileUpdate = Partial<Nullable<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>>;
+export type ProfileUpdate = UpdateType<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
 // --- Tasks ---
 export type TaskType = 'offer' | 'request';
 export type TaskMode = 'online' | 'in_person' | 'hybrid';
@@ -114,37 +116,37 @@ export interface Task {
   location_lng: number | null;
   online_platform: string | null;
   online_link: string | null;
-  proposed_times: Json | null; // Using Json to be flexible with array/object structures
+  proposed_times: Json | null;
   confirmed_time: string | null;
   created_at: string;
   updated_at: string;
 }
 export interface TaskInsert {
-  id?: string;
+  id?: string | undefined;
   creator_id: string;
   type: TaskType;
   title: string;
   description: string;
   estimated_credits: number;
   mode: TaskMode;
-  status?: TaskStatus | null;
-  visibility?: TaskVisibility | null;
-  max_participants?: number | null;
-  travel_allowance?: number | null;
-  cancellation_policy?: string | null;
-  location_city?: string | null;
-  location_state?: string | null;
-  location_country?: string | null;
-  location_lat?: number | null;
-  location_lng?: number | null;
-  online_platform?: string | null;
-  online_link?: string | null;
-  proposed_times?: Json | null;
-  confirmed_time?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  status?: TaskStatus | null | undefined;
+  visibility?: TaskVisibility | null | undefined;
+  max_participants?: number | null | undefined;
+  travel_allowance?: number | null | undefined;
+  cancellation_policy?: string | null | undefined;
+  location_city?: string | null | undefined;
+  location_state?: string | null | undefined;
+  location_country?: string | null | undefined;
+  location_lat?: number | null | undefined;
+  location_lng?: number | null | undefined;
+  online_platform?: string | null | undefined;
+  online_link?: string | null | undefined;
+  proposed_times?: Json | null | undefined;
+  confirmed_time?: string | null | undefined;
+  created_at?: string | null | undefined;
+  updated_at?: string | null | undefined;
 }
-export type TaskUpdate = Partial<Nullable<Omit<Task, 'id' | 'created_at' | 'updated_at'>>>;
+export type TaskUpdate = UpdateType<Omit<Task, 'id' | 'created_at' | 'updated_at'>>;
 // --- Escrows ---
 export type EscrowStatus = 'locked' | 'released' | 'refunded' | 'disputed';
 export interface Escrow {
@@ -163,21 +165,21 @@ export interface Escrow {
   created_at: string;
 }
 export interface EscrowInsert {
-  id?: string;
+  id?: string | undefined;
   task_id: string;
   requester_id: string;
   provider_id: string;
   credits_locked: number;
-  credits_released?: number | null;
-  status?: EscrowStatus | null;
-  locked_at?: string | null;
-  auto_release_at?: string | null;
-  released_at?: string | null;
-  dispute_id?: string | null;
-  is_finalized?: boolean | null;
-  created_at?: string | null;
+  credits_released?: number | null | undefined;
+  status?: EscrowStatus | null | undefined;
+  locked_at?: string | null | undefined;
+  auto_release_at?: string | null | undefined;
+  released_at?: string | null | undefined;
+  dispute_id?: string | null | undefined;
+  is_finalized?: boolean | null | undefined;
+  created_at?: string | null | undefined;
 }
-export type EscrowUpdate = Partial<Nullable<Omit<Escrow, 'id' | 'created_at'>>>;
+export type EscrowUpdate = UpdateType<Omit<Escrow, 'id' | 'created_at'>>;
 // --- Reviews ---
 export interface Review {
   id: string;
@@ -194,20 +196,20 @@ export interface Review {
   created_at: string;
 }
 export interface ReviewInsert {
-  id?: string;
+  id?: string | undefined;
   task_id: string;
   reviewer_id: string;
   reviewee_id: string;
   rating: number;
-  title?: string | null;
-  comment?: string | null;
-  tags?: string[] | null;
-  is_anonymous?: boolean | null;
-  reply_id?: string | null;
-  is_hidden?: boolean | null;
-  created_at?: string | null;
+  title?: string | null | undefined;
+  comment?: string | null | undefined;
+  tags?: string[] | null | undefined;
+  is_anonymous?: boolean | null | undefined;
+  reply_id?: string | null | undefined;
+  is_hidden?: boolean | null | undefined;
+  created_at?: string | null | undefined;
 }
-export type ReviewUpdate = Partial<Nullable<Omit<Review, 'id' | 'created_at'>>>;
+export type ReviewUpdate = UpdateType<Omit<Review, 'id' | 'created_at'>>;
 // --- Disputes ---
 export type DisputeReason = 'not_completed' | 'no_show' | 'poor_quality' | 'safety' | 'fraud' | 'unauthorized_recording' | 'other';
 export type DisputeStatus = 'open' | 'admin_reviewed' | 'resolved';
@@ -227,21 +229,21 @@ export interface Dispute {
   resolved_at: string | null;
 }
 export interface DisputeInsert {
-  id?: string;
+  id?: string | undefined;
   escrow_id: string;
   raised_by: string;
   reason: DisputeReason;
   details: string;
-  evidence?: string[] | null;
-  status?: DisputeStatus | null;
-  admin_decision?: string | null;
-  admin_decision_payload?: Json | null;
-  deadline_at?: string | null;
-  decided_at?: string | null;
-  created_at?: string | null;
-  resolved_at?: string | null;
+  evidence?: string[] | null | undefined;
+  status?: DisputeStatus | null | undefined;
+  admin_decision?: string | null | undefined;
+  admin_decision_payload?: Json | null | undefined;
+  deadline_at?: string | null | undefined;
+  decided_at?: string | null | undefined;
+  created_at?: string | null | undefined;
+  resolved_at?: string | null | undefined;
 }
-export type DisputeUpdate = Partial<Nullable<Omit<Dispute, 'id' | 'created_at'>>>;
+export type DisputeUpdate = UpdateType<Omit<Dispute, 'id' | 'created_at'>>;
 // --- Transactions ---
 export type TransactionType = 'lock' | 'release' | 'refund' | 'admin_adjust';
 export interface Transaction {
@@ -257,18 +259,18 @@ export interface Transaction {
   created_at: string;
 }
 export interface TransactionInsert {
-  id?: string;
+  id?: string | undefined;
   user_id: string;
   type: TransactionType;
   amount: number;
   balance_before: number;
   balance_after: number;
-  escrow_id?: string | null;
-  task_id?: string | null;
-  meta?: Json | null;
-  created_at?: string | null;
+  escrow_id?: string | null | undefined;
+  task_id?: string | null | undefined;
+  meta?: Json | null | undefined;
+  created_at?: string | null | undefined;
 }
-export type TransactionUpdate = Partial<Nullable<Omit<Transaction, 'id' | 'created_at'>>>;
+export type TransactionUpdate = UpdateType<Omit<Transaction, 'id' | 'created_at'>>;
 // --- Notifications ---
 export interface Notification {
   id: string;
@@ -279,14 +281,14 @@ export interface Notification {
   created_at: string;
 }
 export interface NotificationInsert {
-  id?: string;
+  id?: string | undefined;
   user_id: string;
   type: string;
-  payload?: Json | null;
-  is_read?: boolean | null;
-  created_at?: string | null;
+  payload?: Json | null | undefined;
+  is_read?: boolean | null | undefined;
+  created_at?: string | null | undefined;
 }
-export type NotificationUpdate = Partial<Nullable<Omit<Notification, 'id' | 'created_at'>>>;
+export type NotificationUpdate = UpdateType<Omit<Notification, 'id' | 'created_at'>>;
 // --- Files ---
 export interface FileRecord {
   id: string;
@@ -300,14 +302,14 @@ export interface FileRecord {
   uploaded_at: string;
 }
 export interface FileRecordInsert {
-  id?: string;
+  id?: string | undefined;
   owner_id: string;
   bucket: string;
   path: string;
   url: string;
-  file_hash?: string | null;
+  file_hash?: string | null | undefined;
   size_bytes: number;
   mime_type: string;
-  uploaded_at?: string | null;
+  uploaded_at?: string | null | undefined;
 }
-export type FileRecordUpdate = Partial<Nullable<Omit<FileRecord, 'id' | 'created_at'>>>;
+export type FileRecordUpdate = UpdateType<Omit<FileRecord, 'id' | 'created_at'>>;
