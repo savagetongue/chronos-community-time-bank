@@ -1,44 +1,51 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 export interface Database {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at' | 'updated_at'> & { id: string };
+        Insert: Omit<Profile, 'created_at' | 'updated_at'> & { created_at?: string; updated_at?: string };
         Update: Partial<Profile>;
       };
       tasks: {
         Row: Task;
-        Insert: Omit<Task, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Insert: Omit<Task, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string };
         Update: Partial<Task>;
       };
       escrows: {
         Row: Escrow;
-        Insert: Omit<Escrow, 'id' | 'created_at'> & { id?: string };
+        Insert: Omit<Escrow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Escrow>;
       };
       reviews: {
         Row: Review;
-        Insert: Omit<Review, 'id' | 'created_at'> & { id?: string };
+        Insert: Omit<Review, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Review>;
       };
       disputes: {
         Row: Dispute;
-        Insert: Omit<Dispute, 'id' | 'created_at' | 'resolved_at'> & { id?: string };
+        Insert: Omit<Dispute, 'id' | 'created_at' | 'resolved_at'> & { id?: string; created_at?: string; resolved_at?: string | null };
         Update: Partial<Dispute>;
       };
       transactions: {
         Row: Transaction;
-        Insert: Omit<Transaction, 'id' | 'created_at'> & { id?: string };
+        Insert: Omit<Transaction, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Transaction>;
       };
       notifications: {
         Row: Notification;
-        Insert: Omit<Notification, 'id' | 'created_at'> & { id?: string };
+        Insert: Omit<Notification, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Notification>;
       };
       files: {
         Row: FileRecord;
-        Insert: Omit<FileRecord, 'id' | 'uploaded_at'> & { id?: string };
+        Insert: Omit<FileRecord, 'id' | 'uploaded_at'> & { id?: string; uploaded_at?: string };
         Update: Partial<FileRecord>;
       };
     };
@@ -132,6 +139,8 @@ export interface Dispute {
   status: DisputeStatus;
   admin_decision: string | null;
   admin_decision_payload: any | null;
+  deadline_at?: string | null;
+  decided_at?: string | null;
   created_at: string;
   resolved_at: string | null;
 }

@@ -126,17 +126,14 @@ export function useTask(id: string) {
     enabled: !!id
   });
 }
-type CreateTaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'proposed_times' | 'confirmed_time'> & {
-  creator_id: string;
-  proposed_times?: string[] | null;
-};
+type CreateTaskInput = Database['public']['Tables']['tasks']['Insert'];
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation<Task, Error, CreateTaskInput>({
     mutationFn: async (newTask) => {
       const { data, error } = await supabase
         .from('tasks')
-        .insert(newTask as Database['public']['Tables']['tasks']['Insert'])
+        .insert(newTask)
         .select()
         .single();
       if (error) throw error;
@@ -155,34 +152,39 @@ export function useAcceptTask() {
   return useMutation<Escrow, Error, { taskId: string; userId: string }>({
     mutationFn: async ({ taskId, userId }) => {
       if (!taskId) throw new Error('Task ID required');
-      console.log(`Mocking accept task ${taskId} by ${userId}`);
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       // In a real app, this would be an Edge Function call
       // supabase.functions.invoke('accept-task', { body: { taskId, userId } })
       // For now, we manually update the task status
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'accepted' } as Database['public']['Tables']['tasks']['Update'])
+        .update({ status: 'accepted' })
         .eq('id', taskId);
       if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
-      // Return a mock escrow object
-      const mockEscrow: Escrow = {
-        id: `escrow-${Date.now()}`,
+      // Create a real escrow record if possible, otherwise mock
+      const escrowData: Database['public']['Tables']['escrows']['Insert'] = {
         task_id: taskId,
-        requester_id: 'req-id', // In real app, this comes from task
+        requester_id: 'req-id', // Placeholder, ideally fetched from task
         provider_id: userId,
         credits_locked: 5,
         credits_released: 0,
         status: 'locked',
         locked_at: new Date().toISOString(),
-        auto_release_at: null,
-        released_at: null,
-        dispute_id: null,
-        is_finalized: false,
-        created_at: new Date().toISOString()
+        is_finalized: false
       };
-      return mockEscrow;
+      // Try to insert real escrow
+      const { data, error } = await supabase.from('escrows').insert(escrowData).select().single();
+      if (error) {
+          console.warn('Escrow insert failed (likely RLS or missing task data), using mock', error);
+          return {
+            ...escrowData,
+            id: `escrow-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            auto_release_at: null,
+            released_at: null,
+            dispute_id: null
+          } as Escrow;
+      }
+      return data as Escrow;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -193,12 +195,12 @@ export function useAcceptTask() {
 }
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  return useMutation<Task, Error, { id: string; updates: Partial<Task> }>({
+  return useMutation<Task, Error, { id: string; updates: Database['public']['Tables']['tasks']['Update'] }>({
     mutationFn: async ({ id, updates }) => {
       if (!id) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates as Database['public']['Tables']['tasks']['Update'])
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -221,7 +223,7 @@ export function useCheckIn() {
       if (!taskId) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'in_progress' } as Database['public']['Tables']['tasks']['Update'])
+        .update({ status: 'in_progress' })
         .eq('id', taskId)
         .select()
         .single();
@@ -244,7 +246,7 @@ export function useCompleteTask() {
       if (!taskId) throw new Error('Task ID required');
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'completed' } as Database['public']['Tables']['tasks']['Update'])
+        .update({ status: 'completed' })
         .eq('id', taskId)
         .select()
         .single();
@@ -262,11 +264,11 @@ export function useCompleteTask() {
 }
 export function useAddReview() {
   const queryClient = useQueryClient();
-  return useMutation<Review, Error, Partial<Review>>({
+  return useMutation<Review, Error, Database['public']['Tables']['reviews']['Insert']>({
     mutationFn: async (review) => {
       const { data, error } = await supabase
         .from('reviews')
-        .insert(review as Database['public']['Tables']['reviews']['Insert'])
+        .insert(review)
         .select()
         .single();
       if (error) throw error;
@@ -281,16 +283,11 @@ export function useAddReview() {
 }
 export function useRaiseDispute() {
   const queryClient = useQueryClient();
-  return useMutation<Dispute, Error, Partial<Dispute>>({
+  return useMutation<Dispute, Error, Database['public']['Tables']['disputes']['Insert']>({
     mutationFn: async (dispute) => {
-      // Ensure evidence is an array if not provided
-      const disputeData = {
-        ...dispute,
-        evidence: dispute.evidence || []
-      };
       const { data, error } = await supabase
         .from('disputes')
-        .insert(disputeData as Database['public']['Tables']['disputes']['Insert'])
+        .insert(dispute)
         .select()
         .single();
       if (error) throw error;
@@ -298,7 +295,7 @@ export function useRaiseDispute() {
       if (dispute.escrow_id) {
         await supabase
           .from('escrows')
-          .update({ status: 'disputed', dispute_id: data.id } as Database['public']['Tables']['escrows']['Update'])
+          .update({ status: 'disputed', dispute_id: data.id })
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;
@@ -332,7 +329,8 @@ export function useUploadEvidence() {
         url: urlData.publicUrl,
         size_bytes: file.size,
         mime_type: file.type,
-        file_hash: null // Optional
+        file_hash: null,
+        uploaded_at: new Date().toISOString()
       };
       const { data: fileData, error: dbError } = await supabase
         .from('files')
