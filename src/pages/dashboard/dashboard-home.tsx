@@ -2,8 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Clock, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ActiveTasks } from '@/pages/dashboard/active-tasks';
 export function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
@@ -43,11 +45,11 @@ export function DashboardHome() {
           Here's what's happening with your time bank account today.
         </p>
       </div>
-      <motion.div 
+      <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
       >
         <motion.div variants={item}>
           <Card>
@@ -106,29 +108,39 @@ export function DashboardHome() {
           </Card>
         </motion.div>
       </motion.div>
-      {/* Placeholder for future content */}
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-              No recent activity to show.
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Recommended Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-             <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-              Check back later for recommendations.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="active">Active Tasks</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                  No recent activity to show.
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Recommended Tasks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                 <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                  Check back later for recommendations.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="active">
+          <ActiveTasks />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

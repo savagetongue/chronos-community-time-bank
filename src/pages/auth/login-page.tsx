@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +33,7 @@ export function LoginPage() {
       password: '',
     },
   });
-  async function onSubmit(data: LoginFormValues) {
+  const onSubmit = useCallback(async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -47,14 +47,19 @@ export function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        // Map Supabase errors to user-friendly messages
+        if (err.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else {
+          setError(err.message);
+        }
       } else {
         setError('An unknown error occurred');
       }
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [navigate]);
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Left Side - Visual */}

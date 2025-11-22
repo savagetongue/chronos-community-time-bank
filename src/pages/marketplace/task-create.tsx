@@ -56,6 +56,8 @@ export function TaskCreate() {
       description: '',
       estimated_credits: 1,
       mode: 'online',
+      location_city: '',
+      online_platform: '',
     },
     mode: 'onChange',
   });
@@ -79,6 +81,15 @@ export function TaskCreate() {
         max_participants: 1,
         travel_allowance: 0,
         cancellation_policy: 'flexible',
+        location_city: data.location_city || null,
+        online_platform: data.online_platform || null,
+        location_state: null,
+        location_country: null,
+        location_lat: null,
+        location_lng: null,
+        online_link: null,
+        proposed_times: null,
+        confirmed_time: null,
       });
       toast.success('Task created successfully!');
       navigate('/explore');
@@ -101,7 +112,7 @@ export function TaskCreate() {
       <div className="mb-8">
         <div className="flex justify-between items-center relative">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-secondary -z-10" />
-          <div 
+          <div
             className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-chronos-teal -z-10 transition-all duration-300"
             style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
           />
@@ -109,8 +120,8 @@ export function TaskCreate() {
             <div key={s.id} className="flex flex-col items-center bg-background px-2">
               <div className={`
                 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors
-                ${step >= s.id 
-                  ? 'bg-chronos-teal border-chronos-teal text-white' 
+                ${step >= s.id
+                  ? 'bg-chronos-teal border-chronos-teal text-white'
                   : 'bg-background border-muted-foreground text-muted-foreground'}
               `}>
                 {step > s.id ? <Check className="w-5 h-5" /> : s.id}
@@ -178,10 +189,10 @@ export function TaskCreate() {
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Describe what you need or offering in detail..." 
+                            <Textarea
+                              placeholder="Describe what you need or offering in detail..."
                               className="min-h-[120px]"
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -320,8 +331,8 @@ export function TaskCreate() {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="bg-chronos-teal hover:bg-chronos-teal/90 text-white"
                     disabled={createTask.isPending}
                   >

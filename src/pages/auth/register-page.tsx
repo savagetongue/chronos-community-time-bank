@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +41,7 @@ export function RegisterPage() {
       confirmPassword: '',
     },
   });
-  async function onSubmit(data: RegisterFormValues) {
+  const onSubmit = useCallback(async (data: RegisterFormValues) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -58,8 +58,7 @@ export function RegisterPage() {
         throw signUpError;
       }
       setSuccess(true);
-      // Optional: Redirect after short delay or let user read the success message
-      setTimeout(() => navigate('/login'), 3000);
+      // Removed setTimeout to avoid potential unmounted component updates
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -69,7 +68,7 @@ export function RegisterPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -82,7 +81,7 @@ export function RegisterPage() {
             </div>
             <CardTitle className="text-center text-2xl">Account Created!</CardTitle>
             <CardDescription className="text-center">
-              Please check your email to verify your account. You will be redirected to login shortly.
+              Please check your email to verify your account.
             </CardDescription>
           </CardHeader>
           <CardContent>
