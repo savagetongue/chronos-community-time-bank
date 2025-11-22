@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDisputes, useResolveDispute } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
 export function DisputePanel() {
   const { data: disputes, isLoading, refetch } = useDisputes();
   const resolveDispute = useResolveDispute();
@@ -34,9 +35,16 @@ export function DisputePanel() {
     setDecision('');
     setNotes('');
   };
-  if (isLoading) return <Skeleton className="h-96 w-full" />;
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+        <Skeleton className="lg:col-span-1 h-full w-full" />
+        <Skeleton className="lg:col-span-2 h-full w-full" />
+      </div>
+    );
+  }
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
       {/* List */}
       <Card className="lg:col-span-1 overflow-hidden flex flex-col">
         <CardHeader className="pb-3">
@@ -45,8 +53,9 @@ export function DisputePanel() {
         </CardHeader>
         <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">
           {disputes?.map(dispute => (
-            <div
+            <motion.div
               key={dispute.id}
+              whileHover={{ scale: 1.02 }}
               onClick={() => setSelectedDisputeId(dispute.id)}
               className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                 selectedDisputeId === dispute.id
@@ -68,7 +77,7 @@ export function DisputePanel() {
               <p className="text-xs text-muted-foreground line-clamp-2">
                 {dispute.details}
               </p>
-            </div>
+            </motion.div>
           ))}
           {disputes?.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
@@ -79,92 +88,100 @@ export function DisputePanel() {
       </Card>
       {/* Detail */}
       <Card className="lg:col-span-2 flex flex-col">
-        {selectedDispute ? (
-          <>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                    Dispute #{selectedDispute.id.slice(0, 8)}
-                  </CardTitle>
-                  <CardDescription>
-                    Reason: <span className="font-medium text-foreground capitalize">{selectedDispute.reason.replace('_', ' ')}</span>
-                  </CardDescription>
-                </div>
-                {selectedDispute.status === 'resolved' && (
-                  <Badge variant="outline" className="border-green-500 text-green-600">
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto space-y-6">
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Details</h4>
-                <div className="p-4 bg-secondary/20 rounded-md text-sm">
-                  {selectedDispute.details}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Evidence</h4>
-                {selectedDispute.evidence && selectedDispute.evidence.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedDispute.evidence.map((url, i) => (
-                      <a key={i} href={url} target="_blank" rel="noreferrer" className="flex items-center p-2 border rounded hover:bg-secondary">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Evidence {i + 1}
-                      </a>
-                    ))}
+        <AnimatePresence mode="wait">
+          {selectedDispute ? (
+            <motion.div 
+              key={selectedDispute.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="flex flex-col h-full"
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                      Dispute #{selectedDispute.id.slice(0, 8)}
+                    </CardTitle>
+                    <CardDescription>
+                      Reason: <span className="font-medium text-foreground capitalize">{selectedDispute.reason.replace('_', ' ')}</span>
+                    </CardDescription>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No evidence uploaded.</p>
+                  {selectedDispute.status === 'resolved' && (
+                    <Badge variant="outline" className="border-green-500 text-green-600">
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto space-y-6">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Details</h4>
+                  <div className="p-4 bg-secondary/20 rounded-md text-sm">
+                    {selectedDispute.details}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Evidence</h4>
+                  {selectedDispute.evidence && selectedDispute.evidence.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedDispute.evidence.map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noreferrer" className="flex items-center p-2 border rounded hover:bg-secondary">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Evidence {i + 1}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No evidence uploaded.</p>
+                  )}
+                </div>
+                {selectedDispute.status === 'open' && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="text-sm font-medium flex items-center">
+                      <Gavel className="h-4 w-4 mr-2" />
+                      Resolution
+                    </h4>
+                    <div className="grid gap-4">
+                      <Select value={decision} onValueChange={setDecision}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select decision..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="refund_requester">Full Refund to Requester</SelectItem>
+                          <SelectItem value="release_provider">Release Full Amount to Provider</SelectItem>
+                          <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Textarea
+                        placeholder="Admin notes regarding this decision..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 )}
-              </div>
+              </CardContent>
               {selectedDispute.status === 'open' && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="text-sm font-medium flex items-center">
-                    <Gavel className="h-4 w-4 mr-2" />
-                    Resolution
-                  </h4>
-                  <div className="grid gap-4">
-                    <Select value={decision} onValueChange={setDecision}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select decision..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="refund_requester">Full Refund to Requester</SelectItem>
-                        <SelectItem value="release_provider">Release Full Amount to Provider</SelectItem>
-                        <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Textarea
-                      placeholder="Admin notes regarding this decision..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <CardFooter className="border-t pt-4">
+                  <Button
+                    className="w-full bg-destructive hover:bg-destructive/90 text-white"
+                    onClick={handleResolve}
+                    disabled={!decision || resolveDispute.isPending}
+                  >
+                    {resolveDispute.isPending ? 'Processing...' : 'Finalize Decision'}
+                  </Button>
+                </CardFooter>
               )}
-            </CardContent>
-            {selectedDispute.status === 'open' && (
-              <CardFooter className="border-t pt-4">
-                <Button
-                  className="w-full bg-destructive hover:bg-destructive/90 text-white"
-                  onClick={handleResolve}
-                  disabled={!decision || resolveDispute.isPending}
-                >
-                  {resolveDispute.isPending ? 'Processing...' : 'Finalize Decision'}
-                </Button>
-              </CardFooter>
-            )}
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Gavel className="h-12 w-12 mb-4 opacity-20" />
-            <p>Select a dispute to view details</p>
-          </div>
-        )}
+            </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Gavel className="h-12 w-12 mb-4 opacity-20" />
+              <p>Select a dispute to view details</p>
+            </div>
+          )}
+        </AnimatePresence>
       </Card>
     </div>
   );

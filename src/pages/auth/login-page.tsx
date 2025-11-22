@@ -45,14 +45,15 @@ export function LoginPage() {
     let interval: NodeJS.Timeout;
     if (user && profile && !profile.is_approved) {
       interval = setInterval(async () => {
-        const { data: freshProfile } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
+        const freshProfile = data as Profile | null;
         if (freshProfile && freshProfile.is_approved) {
           toast.success('Your account has been approved!');
-          setSession(user, freshProfile as Profile);
+          setSession(user, freshProfile);
           navigate('/dashboard');
           clearInterval(interval);
         }

@@ -16,9 +16,8 @@ export function MainLayout() {
     let mounted = true;
     const initAuth = async () => {
       // Only set loading if not already checked to avoid flicker
-      if (!isAuthChecked) {
-        setLoading(true);
-      }
+      if (isAuthChecked) return;
+      setLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) {
@@ -66,7 +65,7 @@ export function MainLayout() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setSession, setLoading]);
+  }, [setSession, setLoading, isAuthChecked]);
   return (
     <div className="min-h-screen bg-background font-sans antialiased flex flex-col">
       <Navbar />

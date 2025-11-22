@@ -23,6 +23,7 @@ import {
 import { useUnapprovedUsers, useApproveUser, useRejectUser } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/lib/supabase';
+import { motion } from 'framer-motion';
 export function UserTable() {
   const { data: users, isLoading, refetch } = useUnapprovedUsers();
   const approveUser = useApproveUser();
@@ -43,7 +44,7 @@ export function UserTable() {
   );
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 space-y-4">
         <div className="flex justify-between">
           <Skeleton className="h-10 w-full max-w-sm" />
           <Skeleton className="h-10 w-24" />
@@ -58,7 +59,7 @@ export function UserTable() {
     );
   }
   return (
-    <div className="space-y-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 space-y-4">
       <div className="flex items-center justify-between">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -94,78 +95,80 @@ export function UserTable() {
               </TableRow>
             ) : (
               filteredUsers?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                        <User className="h-4 w-4" />
+                <TableRow key={user.id} asChild>
+                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <span className="truncate max-w-[120px] sm:max-w-none">
+                          {user.display_name || 'No Name'}
+                        </span>
                       </div>
-                      <span className="truncate max-w-[120px] sm:max-w-none">
-                        {user.display_name || 'No Name'}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs sm:text-sm">{user.email}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200 whitespace-nowrap">
-                      Pending
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 w-8 p-0">
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Approve User</DialogTitle>
-                            <DialogDescription>
-                              Are you sure you want to approve <strong>{user.display_name || user.email}</strong>? They will be able to post and accept tasks immediately.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              onClick={() => approveUser.mutate(user.id)}
-                              disabled={approveUser.isPending}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              {approveUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Approval'}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">{user.email}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200 whitespace-nowrap">
+                        Pending
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 w-8 p-0">
+                              <Check className="h-4 w-4" />
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Reject User</DialogTitle>
-                            <DialogDescription>
-                              This will suspend the account for <strong>{user.display_name || user.email}</strong>.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              variant="destructive"
-                              onClick={() => rejectUser.mutate(user.id)}
-                              disabled={rejectUser.isPending}
-                            >
-                              {rejectUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reject'}
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Approve User</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to approve <strong>{user.display_name || user.email}</strong>? They will be able to post and accept tasks immediately.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                onClick={() => approveUser.mutate(user.id)}
+                                disabled={approveUser.isPending}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {approveUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Approval'}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
+                              <X className="h-4 w-4" />
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Reject User</DialogTitle>
+                              <DialogDescription>
+                                This will suspend the account for <strong>{user.display_name || user.email}</strong>.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="destructive"
+                                onClick={() => rejectUser.mutate(user.id)}
+                                disabled={rejectUser.isPending}
+                              >
+                                {rejectUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reject'}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
                 </TableRow>
               ))
             )}
@@ -180,7 +183,12 @@ export function UserTable() {
           </div>
         ) : (
           filteredUsers?.map((user) => (
-            <div key={user.id} className="bg-card border rounded-lg p-4 space-y-3">
+            <motion.div 
+              key={user.id} 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card border rounded-lg p-4 space-y-3"
+            >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
@@ -245,7 +253,7 @@ export function UserTable() {
                   </DialogContent>
                 </Dialog>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>

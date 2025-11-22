@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,9 +13,10 @@ import { useNotifications, useMarkNotificationRead } from '@/hooks/use-admin';
 import { useAuthStore } from '@/store/auth-store';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 export function NotificationCenter() {
   const user = useAuthStore((s) => s.user);
-  const { data: notifications, refetch } = useNotifications(user?.id);
+  const { data: notifications, refetch, isLoading } = useNotifications(user?.id);
   const markRead = useMarkNotificationRead();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   useEffect(() => {
@@ -51,42 +52,53 @@ export function NotificationCenter() {
           <SheetTitle>Notifications</SheetTitle>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-100px)] mt-4 pr-4">
-          <div className="space-y-4">
-            {notifications?.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No notifications yet.
-              </div>
-            ) : (
-              notifications?.map((notification) => (
-                <div 
-                  key={notification.id} 
-                  className={`p-4 rounded-lg border transition-colors ${
-                    notification.is_read ? 'bg-background' : 'bg-secondary/30 border-l-4 border-l-chronos-teal'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-medium capitalize">{notification.type.replace('_', ' ')}</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(notification.created_at).toLocaleDateString()}
-                    </span>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <AnimatePresence>
+                {notifications?.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No notifications yet.
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {JSON.stringify(notification.payload)}
-                  </p>
-                  {!notification.is_read && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 px-2 text-xs ml-auto flex"
-                      onClick={() => markRead.mutate(notification.id)}
+                ) : (
+                  notifications?.map((notification) => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className={`p-4 rounded-lg border transition-colors ${
+                        notification.is_read ? 'bg-background' : 'bg-secondary/30 border-l-4 border-l-chronos-teal'
+                      }`}
                     >
-                      <Check className="h-3 w-3 mr-1" /> Mark Read
-                    </Button>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="text-sm font-medium capitalize">{notification.type.replace('_', ' ')}</h4>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(notification.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {JSON.stringify(notification.payload)}
+                      </p>
+                      {!notification.is_read && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs ml-auto flex"
+                          onClick={() => markRead.mutate(notification.id)}
+                        >
+                          <Check className="h-3 w-3 mr-1" /> Mark Read
+                        </Button>
+                      )}
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>

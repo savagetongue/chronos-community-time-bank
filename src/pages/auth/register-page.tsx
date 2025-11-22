@@ -90,7 +90,7 @@ export function RegisterPage() {
         }
         if (!existingProfile) {
           // Fallback: Create profile manually if trigger failed
-          const profileData: Partial<ProfileInsert> = {
+          const profileData: ProfileInsert = {
             id: authData.user.id,
             email: data.email,
             display_name: data.name,

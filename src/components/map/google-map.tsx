@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { Loader2, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
 interface GoogleMapProps {
   lat?: number | null;
   lng?: number | null;
@@ -45,22 +44,12 @@ const MapComponent: React.FC<{
 };
 export function GoogleMap({ lat, lng, city, zoom = 13, height = '400px', className }: GoogleMapProps) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
-  const [center, setCenter] = useState<google.maps.LatLngLiteral | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!apiKey) {
       setError('Google Maps API key missing');
-      return;
     }
-    if (lat && lng) {
-      setCenter({ lat, lng });
-    } else if (city) {
-      // We need the API loaded to geocode, so we handle this inside the wrapper render or via a separate effect if API is loaded
-      // For simplicity in this wrapper structure, we'll let the inner component handle geocoding or just wait
-      // But actually, we can't use google.maps.Geocoder until loaded.
-      // So we pass the city to the inner component or handle it after load.
-    }
-  }, [lat, lng, city, apiKey]);
+  }, [apiKey]);
   if (!apiKey) {
     return (
       <div className={`bg-secondary/20 flex items-center justify-center rounded-lg border border-dashed ${className}`} style={{ height }}>
@@ -110,7 +99,7 @@ const MapWithGeocoding: React.FC<GoogleMapProps> = ({ lat, lng, city, zoom = 13,
         }
       });
     }
-  }, [lat, lng, city]);
+  }, [lat, lng, city, center]);
   if (!center) {
     return (
       <div className={`bg-secondary/10 flex items-center justify-center rounded-lg ${className}`} style={{ height }}>
