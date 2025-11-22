@@ -21,6 +21,26 @@ export interface Database {
         Insert: Partial<Review>;
         Update: Partial<Review>;
       };
+      disputes: {
+        Row: Dispute;
+        Insert: Partial<Dispute>;
+        Update: Partial<Dispute>;
+      };
+      transactions: {
+        Row: Transaction;
+        Insert: Partial<Transaction>;
+        Update: Partial<Transaction>;
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Partial<Notification>;
+        Update: Partial<Notification>;
+      };
+      files: {
+        Row: FileRecord;
+        Insert: Partial<FileRecord>;
+        Update: Partial<FileRecord>;
+      };
     };
   };
 }
@@ -36,6 +56,7 @@ export interface Profile {
   completed_tasks_count: number;
   is_approved: boolean;
   is_suspended: boolean;
+  is_admin?: boolean; // Added for admin role check
   kyc_level: number;
   created_at: string;
   updated_at: string;
@@ -43,6 +64,7 @@ export interface Profile {
 export type TaskType = 'offer' | 'request';
 export type TaskMode = 'online' | 'in_person' | 'hybrid';
 export type TaskStatus = 'open' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+export type TaskVisibility = 'public' | 'private';
 export interface Task {
   id: string;
   creator_id: string;
@@ -52,6 +74,7 @@ export interface Task {
   estimated_credits: number;
   mode: TaskMode;
   status: TaskStatus;
+  visibility: TaskVisibility;
   max_participants: number;
   travel_allowance: number;
   cancellation_policy: string;
@@ -62,7 +85,7 @@ export interface Task {
   location_lng: number | null;
   online_platform: string | null;
   online_link: string | null;
-  proposed_times: string[] | null; // JSON array of ISO strings or objects
+  proposed_times: string[] | null; // JSON array of ISO strings
   confirmed_time: string | null;
   created_at: string;
   updated_at: string;
@@ -93,5 +116,54 @@ export interface Review {
   comment: string | null;
   tags: string[];
   is_anonymous: boolean;
+  reply_id: string | null; // For replies to reviews
+  is_hidden?: boolean; // For moderation
   created_at: string;
+}
+export type DisputeReason = 'not_completed' | 'no_show' | 'poor_quality' | 'safety' | 'fraud' | 'unauthorized_recording' | 'other';
+export type DisputeStatus = 'open' | 'admin_reviewed' | 'resolved';
+export interface Dispute {
+  id: string;
+  escrow_id: string;
+  raised_by: string;
+  reason: DisputeReason;
+  details: string;
+  evidence: string[]; // Array of file URLs or IDs
+  status: DisputeStatus;
+  admin_decision: string | null;
+  admin_decision_payload: any | null; // JSON
+  created_at: string;
+  resolved_at: string | null;
+}
+export type TransactionType = 'lock' | 'release' | 'refund' | 'admin_adjust';
+export interface Transaction {
+  id: string;
+  user_id: string;
+  type: TransactionType;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
+  escrow_id: string | null;
+  task_id: string | null;
+  meta: any | null; // JSON
+  created_at: string;
+}
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  payload: any; // JSON
+  is_read: boolean;
+  created_at: string;
+}
+export interface FileRecord {
+  id: string;
+  owner_id: string;
+  bucket: string;
+  path: string;
+  url: string;
+  file_hash: string | null;
+  size_bytes: number;
+  mime_type: string;
+  uploaded_at: string;
 }

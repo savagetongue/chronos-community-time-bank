@@ -1,27 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, FileText, Gavel, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDisputes, useResolveDispute } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/lib/supabase';
 export function DisputePanel() {
-  const { data: disputes, isLoading, refetch } = useDisputes();
+  const { data: disputes, isLoading } = useDisputes();
   const resolveDispute = useResolveDispute();
   const [selectedDisputeId, setSelectedDisputeId] = useState<string | null>(null);
   const [decision, setDecision] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
-  useEffect(() => {
-    const channel = supabase.channel('admin-disputes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes' }, () => refetch())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetch]);
   const selectedDispute = disputes?.find(d => d.id === selectedDisputeId);
   const handleResolve = () => {
     if (!selectedDisputeId || !decision) return;
@@ -45,12 +37,12 @@ export function DisputePanel() {
         </CardHeader>
         <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">
           {disputes?.map(dispute => (
-            <div
+            <div 
               key={dispute.id}
               onClick={() => setSelectedDisputeId(dispute.id)}
               className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                selectedDisputeId === dispute.id
-                  ? 'bg-accent border-accent-foreground/20'
+                selectedDisputeId === dispute.id 
+                  ? 'bg-accent border-accent-foreground/20' 
                   : 'hover:bg-secondary/50'
               }`}
             >
@@ -138,8 +130,8 @@ export function DisputePanel() {
                         <SelectItem value="split_50_50">Split 50/50</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Textarea
-                      placeholder="Admin notes regarding this decision..."
+                    <Textarea 
+                      placeholder="Admin notes regarding this decision..." 
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
@@ -149,7 +141,7 @@ export function DisputePanel() {
             </CardContent>
             {selectedDispute.status === 'open' && (
               <CardFooter className="border-t pt-4">
-                <Button
+                <Button 
                   className="w-full bg-destructive hover:bg-destructive/90 text-white"
                   onClick={handleResolve}
                   disabled={!decision || resolveDispute.isPending}

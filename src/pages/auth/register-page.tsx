@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -45,7 +46,7 @@ export function RegisterPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -54,11 +55,27 @@ export function RegisterPage() {
           },
         },
       });
-      if (signUpError) {
-        throw signUpError;
+      if (signUpError) throw signUpError;
+      if (authData.user) {
+        // Create profile manually if trigger doesn't exist
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: authData.user.id,
+          display_name: data.name,
+          email: data.email,
+          is_approved: false, // Explicitly set to false
+          credits: 0,
+          locked_credits: 0,
+          reputation_score: 0,
+          completed_tasks_count: 0,
+          kyc_level: 0,
+          skills: []
+        });
+        if (profileError) {
+          console.warn('Profile creation failed (might be handled by trigger):', profileError);
+        }
       }
       setSuccess(true);
-      // Removed setTimeout to avoid potential unmounted component updates
+      toast.success('Account created! Awaiting admin approval.');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -81,15 +98,15 @@ export function RegisterPage() {
             </div>
             <CardTitle className="text-center text-2xl">Account Created!</CardTitle>
             <CardDescription className="text-center">
-              Please check your email to verify your account.
+              Your account is pending admin approval. You will be notified once approved.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              className="w-full bg-chronos-teal hover:bg-chronos-teal/90" 
-              onClick={() => navigate('/login')}
+            <Button
+              className="w-full bg-chronos-teal hover:bg-chronos-teal/90"
+              onClick={() => navigate('/')}
             >
-              Go to Login
+              Back to Home
             </Button>
           </CardContent>
         </Card>
@@ -112,7 +129,7 @@ export function RegisterPage() {
           <blockquote className="text-2xl font-medium text-white mb-6">
             "Community is much more than belonging to something; it's about doing something together that makes belonging matter."
           </blockquote>
-          <p className="text-white/80 font-medium">— Brian Solis</p>
+          <p className="text-white/80 font-medium">��� Brian Solis</p>
         </div>
         <div className="relative z-10 text-white/60 text-sm text-right">
           Join the movement.
