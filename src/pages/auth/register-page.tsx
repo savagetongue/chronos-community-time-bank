@@ -84,7 +84,7 @@ export function RegisterPage() {
             is_suspended: false,
             kyc_level: 0,
             // Explicitly omit optional fields that might cause issues if schema is out of sync
-            // skills: [], 
+            // skills: [],
             // bio: null
           };
           try {
