@@ -91,9 +91,9 @@ export function useResolveDispute() {
         // 1. Update dispute status
         const { error: disputeError } = await supabase
           .from('disputes')
-          .update({ 
-            status: 'resolved', 
-            admin_decision: decision, 
+          .update({
+            status: 'resolved',
+            admin_decision: decision,
             admin_decision_payload: payload,
             resolved_at: new Date().toISOString()
           } as Database['public']['Tables']['disputes']['Update'])

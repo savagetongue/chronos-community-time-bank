@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Users, AlertTriangle, Activity, Download, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +19,6 @@ export function AdminDashboard() {
     try {
       const zip = new JSZip();
       // List of critical files to include in the zip
-      // In a real environment, this would be dynamic or server-side
       const filesToFetch = [
         'package.json',
         'tsconfig.json',
@@ -45,11 +45,22 @@ export function AdminDashboard() {
         'src/pages/landing-page.tsx',
         'src/pages/admin/admin-dashboard.tsx',
         'src/pages/dashboard/dashboard-home.tsx',
+        'src/pages/dashboard/session-management.tsx',
+        'src/pages/dashboard/active-tasks.tsx',
         'src/pages/marketplace/explore-page.tsx',
         'src/pages/marketplace/task-create.tsx',
         'src/pages/marketplace/task-detail.tsx',
+        'src/pages/scheduling/schedule-task.tsx',
         'src/pages/auth/login-page.tsx',
         'src/pages/auth/register-page.tsx',
+        'src/components/admin/user-table.tsx',
+        'src/components/admin/dispute-panel.tsx',
+        'src/components/admin/review-moderator.tsx',
+        'src/components/admin/notification-center.tsx',
+        'src/components/session-card.tsx',
+        'src/components/task-card.tsx',
+        'src/components/filters/task-filters.tsx',
+        'src/components/ui/skeleton.tsx',
         'worker/index.ts',
         'worker/core-utils.ts',
         'worker/entities.ts',
@@ -105,8 +116,8 @@ export function AdminDashboard() {
             Platform governance and moderation overview.
           </p>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="border-chronos-teal text-chronos-teal hover:bg-chronos-teal/10"
           onClick={handleDownloadZip}
           disabled={isZipping}
@@ -134,36 +145,42 @@ export function AdminDashboard() {
           </>
         ) : (
           <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.users || 0}</div>
-                <p className="text-xs text-muted-foreground">Registered members</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Disputes</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.disputes || 0}</div>
-                <p className="text-xs text-muted-foreground">Requiring attention</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-                <Activity className="h-4 w-4 text-chronos-teal" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.tasks || 0}</div>
-                <p className="text-xs text-muted-foreground">Platform activity</p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.users || 0}</div>
+                  <p className="text-xs text-muted-foreground">Registered members</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Disputes</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.disputes || 0}</div>
+                  <p className="text-xs text-muted-foreground">Requiring attention</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+                  <Activity className="h-4 w-4 text-chronos-teal" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.tasks || 0}</div>
+                  <p className="text-xs text-muted-foreground">Platform activity</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </>
         )}
       </div>
