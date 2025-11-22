@@ -55,10 +55,10 @@ export function DashboardHome() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
       >
         <motion.div variants={item}>
-          <Card>
+          <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Available Credits</CardTitle>
               <Clock className="h-4 w-4 text-chronos-teal" />
@@ -72,7 +72,7 @@ export function DashboardHome() {
           </Card>
         </motion.div>
         <motion.div variants={item}>
-          <Card>
+          <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
               <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -86,7 +86,7 @@ export function DashboardHome() {
           </Card>
         </motion.div>
         <motion.div variants={item}>
-          <Card>
+          <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reputation</CardTitle>
               <TrendingUp className="h-4 w-4 text-chronos-amber" />
@@ -100,7 +100,7 @@ export function DashboardHome() {
           </Card>
         </motion.div>
         <motion.div variants={item}>
-          <Card>
+          <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
@@ -121,65 +121,83 @@ export function DashboardHome() {
           <TabsTrigger value="reviews">My Reviews</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-                  No recent activity to show.
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recommended Tasks</CardTitle>
-              </CardHeader>
-              <CardContent>
-                 <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-                  Check back later for recommendations.
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                    No recent activity to show.
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Recommended Tasks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                   <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                    Check back later for recommendations.
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
         </TabsContent>
         <TabsContent value="active">
-          {tasksLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Skeleton className="h-48" />
-              <Skeleton className="h-48" />
-            </div>
-          ) : activeTasks && activeTasks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeTasks.map(task => (
-                <SessionCard
-                  key={task.id}
-                  task={task}
-                  isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-secondary/20 rounded-lg border border-dashed">
-              <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No active tasks</h3>
-              <p className="text-muted-foreground mb-6">You haven't posted or accepted any tasks yet.</p>
-            </div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {tasksLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Skeleton className="h-48" />
+                <Skeleton className="h-48" />
+              </div>
+            ) : activeTasks && activeTasks.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeTasks.map(task => (
+                  <SessionCard
+                    key={task.id}
+                    task={task}
+                    isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-secondary/20 rounded-lg border border-dashed">
+                <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No active tasks</h3>
+                <p className="text-muted-foreground mb-6">You haven't posted or accepted any tasks yet.</p>
+              </div>
+            )}
+          </motion.div>
         </TabsContent>
         <TabsContent value="reviews">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reviews Received</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Star className="mx-auto h-12 w-12 mb-4 opacity-20" />
-                <p>Complete tasks to earn reviews and build your reputation.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Reviews Received</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-muted-foreground">
+                  <Star className="mx-auto h-12 w-12 mb-4 opacity-20" />
+                  <p>Complete tasks to earn reviews and build your reputation.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

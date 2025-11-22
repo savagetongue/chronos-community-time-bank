@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database, FileRecord } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -307,5 +307,66 @@ export function useRaiseDispute() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Dispute raised. Admin will review shortly.');
     }
+  });
+}
+export function useUploadEvidence() {
+  const queryClient = useQueryClient();
+  return useMutation<FileRecord, Error, { file: File; taskId: string; userId: string }>({
+    mutationFn: async ({ file, taskId, userId }) => {
+      // 1. Upload to Storage
+      const filePath = `${taskId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('evidence')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      if (!uploadData) throw new Error('Upload failed');
+      // 2. Get Public URL
+      const { data: urlData } = supabase.storage
+        .from('evidence')
+        .getPublicUrl(uploadData.path);
+      // 3. Insert into files table
+      const fileRecord: Database['public']['Tables']['files']['Insert'] = {
+        owner_id: userId,
+        bucket: 'evidence',
+        path: uploadData.path,
+        url: urlData.publicUrl,
+        size_bytes: file.size,
+        mime_type: file.type,
+        file_hash: null // Optional
+      };
+      const { data: fileData, error: dbError } = await supabase
+        .from('files')
+        .insert(fileRecord)
+        .select()
+        .single();
+      if (dbError) throw dbError;
+      if (!fileData) throw new Error('Database insert failed');
+      return fileData as FileRecord;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-files', variables.taskId] });
+      toast.success('Evidence uploaded successfully');
+    },
+    onError: (error) => {
+      console.error('Upload error:', error);
+      toast.error(`Upload failed: ${error.message}`);
+    }
+  });
+}
+export function useTaskFiles(taskId: string) {
+  return useQuery({
+    queryKey: ['task-files', taskId],
+    queryFn: async () => {
+      if (!taskId) return [];
+      // Filter files by path prefix matching taskId
+      const { data, error } = await supabase
+        .from('files')
+        .select('*')
+        .ilike('path', `${taskId}/%`)
+        .order('uploaded_at', { ascending: false });
+      if (error) throw error;
+      return data as FileRecord[];
+    },
+    enabled: !!taskId
   });
 }
