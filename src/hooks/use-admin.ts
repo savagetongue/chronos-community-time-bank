@@ -7,8 +7,11 @@ import { toast } from 'sonner';
 export function useUnapprovedUsers() {
   const queryClient = useQueryClient();
   useEffect(() => {
-    const channel = supabase.channel('admin-users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+    const channel = supabase.channel('admin-profiles')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       })
       .subscribe();

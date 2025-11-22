@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -302,7 +302,8 @@ export function useRaiseDispute() {
         admin_decision: null,
         admin_decision_payload: null,
         deadline_at: null,
-        decided_at: null
+        decided_at: null,
+        resolved_at: null
       };
       const { data, error } = await supabase
         .from('disputes')
