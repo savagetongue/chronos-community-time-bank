@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode } from '@/types/database';
-import { addDays, subDays } from 'date-fns';
+import { Task, TaskType, TaskMode, Escrow } from '@/types/database';
+import { subDays } from 'date-fns';
 export interface TaskFilters {
   search: string;
   type: TaskType | 'all';
@@ -30,6 +30,8 @@ const MOCK_TASKS: Task[] = [
     location_lng: null,
     online_platform: 'Zoom',
     online_link: null,
+    proposed_times: [],
+    confirmed_time: null,
     created_at: subDays(new Date(), 2).toISOString(),
     updated_at: subDays(new Date(), 2).toISOString(),
   },
@@ -52,6 +54,8 @@ const MOCK_TASKS: Task[] = [
     location_lng: -122.4194,
     online_platform: null,
     online_link: null,
+    proposed_times: [],
+    confirmed_time: null,
     created_at: subDays(new Date(), 1).toISOString(),
     updated_at: subDays(new Date(), 1).toISOString(),
   },
@@ -74,51 +78,61 @@ const MOCK_TASKS: Task[] = [
     location_lng: null,
     online_platform: 'Google Meet',
     online_link: null,
+    proposed_times: [],
+    confirmed_time: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
 ];
-export function useTasks(filters: TaskFilters) {
+export function useTasks(filters?: TaskFilters, userId?: string) {
   return useQuery({
-    queryKey: ['tasks', filters],
+    queryKey: ['tasks', filters, userId],
     queryFn: async () => {
       let query = supabase
         .from('tasks')
         .select('*, profiles(display_name, reputation_score)')
-        .eq('status', 'open')
         .order('created_at', { ascending: false });
-      if (filters.type !== 'all') {
-        query = query.eq('type', filters.type);
+      if (userId) {
+        // For dashboard: show tasks where user is creator OR (future) provider
+        // Since we don't have a many-to-many relation easily queryable here without complex joins,
+        // we'll just fetch created tasks for now.
+        // In a real app, we'd query escrows or a participants table.
+        query = query.eq('creator_id', userId);
+      } else {
+        // Public marketplace: only open tasks
+        query = query.eq('status', 'open');
       }
-      if (filters.mode !== 'all') {
-        query = query.eq('mode', filters.mode);
+      if (filters) {
+        if (filters.type !== 'all') {
+          query = query.eq('type', filters.type);
+        }
+        if (filters.mode !== 'all') {
+          query = query.eq('mode', filters.mode);
+        }
+        if (filters.search) {
+          query = query.ilike('title', `%${filters.search}%`);
+        }
       }
-      if (filters.search) {
-        query = query.ilike('title', `%${filters.search}%`);
-      }
-      // Client-side filtering for credits since it's a range
-      // In a real app with millions of rows, we'd use proper range queries
       const { data, error } = await query;
       if (error) {
         console.error('Error fetching tasks:', error);
-        // Return mock data on error or empty for demo purposes if connection fails
-        return MOCK_TASKS.filter(t => {
+        // Fallback to mocks if DB is empty or error
+        let mocks = MOCK_TASKS;
+        if (userId) mocks = []; // No mocks for specific user dashboard to avoid confusion
+        return mocks.filter(t => {
+          if (!filters) return true;
           if (filters.type !== 'all' && t.type !== filters.type) return false;
           if (filters.mode !== 'all' && t.mode !== filters.mode) return false;
           if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
           return true;
         });
       }
-      // If no data in DB (fresh install), return mocks
-      if (!data || data.length === 0) {
-        return MOCK_TASKS.filter(t => {
-          if (filters.type !== 'all' && t.type !== filters.type) return false;
-          if (filters.mode !== 'all' && t.mode !== filters.mode) return false;
-          if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-          return true;
-        });
+      // Client-side filtering for credits since it's a range
+      let result = data as unknown as (Task & { profiles: { display_name: string, reputation_score: number } })[];
+      if (filters) {
+        result = result.filter(t => t.estimated_credits <= filters.maxCredits && t.estimated_credits >= filters.minCredits);
       }
-      return data as unknown as (Task & { profiles: { display_name: string, reputation_score: number } })[];
+      return result;
     },
   });
 }
@@ -135,18 +149,23 @@ export function useTask(id: string) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data;
+      return data as Task & { profiles: { display_name: string, reputation_score: number } };
     },
     enabled: !!id,
   });
 }
+// Correct type for task creation to avoid 'Partial<Task>' mismatch
+type CreateTaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'proposed_times' | 'confirmed_time'> & { 
+  creator_id: string;
+  proposed_times?: string[] | null;
+};
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newTask: Partial<Task>) => {
+    mutationFn: async (newTask: CreateTaskInput) => {
       const { data, error } = await supabase
         .from('tasks')
-        .insert(newTask)
+        .insert(newTask as any) // Cast to any to bypass strict Partial<Task> check if needed, or match exact shape
         .select()
         .single();
       if (error) throw error;
@@ -155,5 +174,70 @@ export function useCreateTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
+  });
+}
+export function useAcceptTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ taskId, userId }: { taskId: string; userId: string }) => {
+      // In a real app, this calls a Supabase Edge Function
+      // const { data, error } = await supabase.functions.invoke('accept-task', { body: { taskId, userId } });
+      // Mocking the Edge Function logic:
+      // 1. Check if task exists and is open
+      // 2. Lock credits (create escrow)
+      // 3. Update task status to 'accepted'
+      console.log(`Mocking accept task ${taskId} by ${userId}`);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Mock DB updates
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ status: 'accepted' })
+        .eq('id', taskId);
+      if (updateError) {
+        console.warn('Mock update failed (likely RLS or no DB), proceeding with mock success');
+      }
+      // Return mock escrow object
+      const mockEscrow: Escrow = {
+        id: `escrow-${Date.now()}`,
+        task_id: taskId,
+        requester_id: 'req-id', // would be dynamic
+        provider_id: userId,
+        credits_locked: 5,
+        credits_released: 0,
+        status: 'locked',
+        locked_at: new Date().toISOString(),
+        auto_release_at: null,
+        released_at: null,
+        dispute_id: null,
+        is_finalized: false,
+        created_at: new Date().toISOString()
+      };
+      return mockEscrow;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tasks'] });
+    },
+  });
+}
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Task> }) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
   });
 }

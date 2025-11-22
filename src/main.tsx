@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client'
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -19,6 +20,8 @@ import { DashboardHome } from '@/pages/dashboard/dashboard-home';
 import { ExplorePage } from '@/pages/marketplace/explore-page';
 import { TaskCreate } from '@/pages/marketplace/task-create';
 import { TaskDetail } from '@/pages/marketplace/task-detail';
+import { ScheduleTask } from '@/pages/scheduling/schedule-task';
+import { useAuthStore } from '@/store/auth-store';
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +31,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+};
 const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -39,7 +50,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/dashboard",
-        element: <DashboardHome />,
+        element: <ProtectedRoute><DashboardHome /></ProtectedRoute>,
       },
       {
         path: "/explore",
@@ -47,11 +58,15 @@ const router = createBrowserRouter([
       },
       {
         path: "/create-task",
-        element: <TaskCreate />,
+        element: <ProtectedRoute><TaskCreate /></ProtectedRoute>,
       },
       {
         path: "/tasks/:id",
         element: <TaskDetail />,
+      },
+      {
+        path: "/schedule/:id",
+        element: <ProtectedRoute><ScheduleTask /></ProtectedRoute>,
       },
       {
         path: "/about",

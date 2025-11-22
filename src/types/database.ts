@@ -62,6 +62,8 @@ export interface Task {
   location_lng: number | null;
   online_platform: string | null;
   online_link: string | null;
+  proposed_times: string[] | null; // JSON array of ISO strings or objects
+  confirmed_time: string | null;
   created_at: string;
   updated_at: string;
 }
