@@ -3,42 +3,42 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at' | 'updated_at'>;
+        Insert: Omit<Profile, 'created_at' | 'updated_at'> & { id: string };
         Update: Partial<Profile>;
       };
       tasks: {
         Row: Task;
-        Insert: Omit<Task, 'id' | 'created_at' | 'updated_at'> & Partial<Pick<Task, 'id'>>;
+        Insert: Omit<Task, 'id' | 'created_at' | 'updated_at'> & { id?: string };
         Update: Partial<Task>;
       };
       escrows: {
         Row: Escrow;
-        Insert: Omit<Escrow, 'id' | 'created_at'> & Partial<Pick<Escrow, 'id'>>;
+        Insert: Omit<Escrow, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Escrow>;
       };
       reviews: {
         Row: Review;
-        Insert: Omit<Review, 'id' | 'created_at'> & Partial<Pick<Review, 'id'>>;
+        Insert: Omit<Review, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Review>;
       };
       disputes: {
         Row: Dispute;
-        Insert: Omit<Dispute, 'id' | 'created_at' | 'resolved_at'> & Partial<Pick<Dispute, 'id'>>;
+        Insert: Omit<Dispute, 'id' | 'created_at' | 'resolved_at'> & { id?: string };
         Update: Partial<Dispute>;
       };
       transactions: {
         Row: Transaction;
-        Insert: Omit<Transaction, 'id' | 'created_at'> & Partial<Pick<Transaction, 'id'>>;
+        Insert: Omit<Transaction, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Transaction>;
       };
       notifications: {
         Row: Notification;
-        Insert: Omit<Notification, 'id' | 'created_at'> & Partial<Pick<Notification, 'id'>>;
+        Insert: Omit<Notification, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Notification>;
       };
       files: {
         Row: FileRecord;
-        Insert: Omit<FileRecord, 'id' | 'uploaded_at'> & Partial<Pick<FileRecord, 'id'>>;
+        Insert: Omit<FileRecord, 'id' | 'uploaded_at'> & { id?: string };
         Update: Partial<FileRecord>;
       };
     };
