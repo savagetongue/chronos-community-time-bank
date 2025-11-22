@@ -218,7 +218,7 @@ export interface Dispute {
   evidence: string[];
   status: DisputeStatus;
   admin_decision: string | null;
-  admin_decision_payload: any | null;
+  admin_decision_payload: Json | null;
   deadline_at: string | null;
   decided_at: string | null;
   created_at: string;
@@ -233,7 +233,7 @@ export interface DisputeInsert {
   evidence?: string[];
   status?: DisputeStatus;
   admin_decision?: string | null;
-  admin_decision_payload?: any | null;
+  admin_decision_payload?: Json | null;
   deadline_at?: string | null;
   decided_at?: string | null;
   created_at?: string;
@@ -251,7 +251,7 @@ export interface Transaction {
   balance_after: number;
   escrow_id: string | null;
   task_id: string | null;
-  meta: any | null;
+  meta: Json | null;
   created_at: string;
 }
 export interface TransactionInsert {
@@ -263,7 +263,7 @@ export interface TransactionInsert {
   balance_after: number;
   escrow_id?: string | null;
   task_id?: string | null;
-  meta?: any | null;
+  meta?: Json | null;
   created_at?: string;
 }
 export type TransactionUpdate = Partial<Omit<Transaction, 'id' | 'created_at'>>;
@@ -272,7 +272,7 @@ export interface Notification {
   id: string;
   user_id: string;
   type: string;
-  payload: any;
+  payload: Json;
   is_read: boolean;
   created_at: string;
 }
@@ -280,7 +280,7 @@ export interface NotificationInsert {
   id?: string;
   user_id: string;
   type: string;
-  payload?: any;
+  payload?: Json;
   is_read?: boolean;
   created_at?: string;
 }
