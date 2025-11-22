@@ -1,18 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Clock, Activity, Star } from 'lucide-react';
+import { Wallet, TrendingUp, Clock, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTasks } from '@/hooks/use-tasks';
-import { ActiveTasks } from '@/pages/dashboard/active-tasks';
-import { NotificationCenter } from '@/components/admin/notification-center';
 export function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const { data: activeTasks, isLoading: tasksLoading } = useTasks(undefined, user?.id);
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -40,25 +35,22 @@ export function DashboardHome() {
   }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {profile?.display_name || user?.email?.split('@')[0]}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Here's what's happening with your time bank account today.
-          </p>
-        </div>
-        <NotificationCenter />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome back, {profile?.display_name || user?.email?.split('@')[0]}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Here's what's happening with your time bank account today.
+        </p>
       </div>
-      <motion.div
+      <motion.div 
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="hover:shadow-glow transition-shadow duration-300">
+        <motion.div variants={item}>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Available Credits</CardTitle>
               <Clock className="h-4 w-4 text-chronos-teal" />
@@ -71,8 +63,8 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="hover:shadow-glow transition-shadow duration-300">
+        <motion.div variants={item}>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
               <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -85,8 +77,8 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="hover:shadow-glow transition-shadow duration-300">
+        <motion.div variants={item}>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reputation</CardTitle>
               <TrendingUp className="h-4 w-4 text-chronos-amber" />
@@ -99,86 +91,44 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="hover:shadow-glow transition-shadow duration-300">
+        <motion.div variants={item}>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeTasks?.length || 0}</div>
+              <div className="text-2xl font-bold">0</div>
               <p className="text-xs text-muted-foreground">
-                Actions required
+                0 actions required
               </p>
             </CardContent>
           </Card>
         </motion.div>
       </motion.div>
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="active">Active Tasks</TabsTrigger>
-          <TabsTrigger value="reviews">My Reviews</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-                    No recent activity to show.
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="col-span-3">
-                <CardHeader>
-                  <CardTitle>Recommended Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-                    Check back later for recommendations.
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Placeholder for future content */}
+      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+              No recent activity to show.
             </div>
-          </motion.div>
-        </TabsContent>
-        <TabsContent value="active">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ActiveTasks />
-          </motion.div>
-        </TabsContent>
-        <TabsContent value="reviews">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Reviews Received</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Star className="mx-auto h-12 w-12 mb-4 opacity-20" />
-                  <p>Complete tasks to earn reviews and build your reputation.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recommended Tasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+              Check back later for recommendations.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

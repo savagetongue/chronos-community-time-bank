@@ -48,16 +48,21 @@ export function MainLayout() {
     return () => subscription.unsubscribe();
   }, [setSession, setLoading]);
   return (
-    <div className="min-h-screen bg-background font-sans antialiased flex flex-col">
+    <div className="min-h-screen bg-background font-sans antialiased">
       <Navbar />
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
       <footer className="border-t border-border/40 bg-background/95 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-4" />
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
+              &copy; {new Date().getFullYear()} Chronos Community Time Bank. All rights reserved.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Built with ❤️ at Cloudflare
+            </p>
+          </div>
         </div>
       </footer>
       <Toaster richColors />

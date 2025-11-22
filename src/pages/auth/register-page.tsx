@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,10 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase, supabaseAdmin, checkSupabaseEnv } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { ProfileInsert, ProfileUpdate } from '@/types/database';
-import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/lib/supabase';
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -44,15 +41,11 @@ export function RegisterPage() {
       confirmPassword: '',
     },
   });
-  const onSubmit = useCallback(async (data: RegisterFormValues) => {
+  async function onSubmit(data: RegisterFormValues) {
     setIsLoading(true);
     setError(null);
-    // Check env vars
-    if (!checkSupabaseEnv()) {
-      toast.info('Sandbox: Using mock credentials. Real backend requires environment variables.');
-    }
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -61,86 +54,22 @@ export function RegisterPage() {
           },
         },
       });
-      if (signUpError) throw signUpError;
-      if (authData.user) {
-        // Check if profile exists (trigger might have created it)
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', authData.user.id)
-          .single();
-        // Admin Auto-Approval Logic
-        if (authData.user.email === 'anandbhagyawant8719@gmail.com') {
-          try {
-            const updatePayload: ProfileUpdate = { is_approved: true };
-            const { error: adminUpdateError } = await supabaseAdmin
-              .from('profiles')
-              .update(updatePayload)
-              .eq('id', authData.user.id);
-            if (adminUpdateError) {
-              console.error('Admin auto-approval failed:', adminUpdateError);
-            } else {
-              toast.success('Admin account created and approved!');
-              navigate('/dashboard');
-              return; // Skip success screen
-            }
-          } catch (err) {
-            console.error('Admin auto-approval exception:', err);
-          }
-        }
-        if (!existingProfile) {
-          // Fallback: Create profile manually if trigger failed
-          const profileData: ProfileInsert = {
-            id: authData.user.id,
-            email: data.email,
-            display_name: data.name,
-            is_approved: false,
-            credits: 0,
-            locked_credits: 0,
-            reputation_score: 0,
-            completed_tasks_count: 0,
-            is_suspended: false,
-            kyc_level: 0,
-          };
-          try {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .insert([profileData]);
-            if (profileError) {
-              console.error('Profile creation fallback failed:', profileError);
-              // Don't block success if auth worked, but warn
-              toast.warning('Account created but profile setup incomplete. Please contact support.');
-            } else {
-              toast.success('Profile created successfully!');
-            }
-          } catch (fallbackError) {
-             console.error('Profile creation fallback exception:', fallbackError);
-             toast.warning('Account created. Profile setup encountered an issue.');
-          }
-        } else {
-          toast.success('Account created! Profile setup via system trigger.');
-        }
-        setSuccess(true);
+      if (signUpError) {
+        throw signUpError;
       }
+      setSuccess(true);
+      // Optional: Redirect after short delay or let user read the success message
+      setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       if (err instanceof Error) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('network') || msg.includes('fetch')) {
-          setError('Network error. Please check your connection or Supabase configuration.');
-        } else if (msg.includes('password')) {
-          setError('Password must meet requirements (8+ chars).');
-        } else {
-          setError(err.message);
-        }
-        toast.error(err.message);
+        setError(err.message);
       } else {
         setError('An unknown error occurred');
-        toast.error('An unknown error occurred');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -153,15 +82,15 @@ export function RegisterPage() {
             </div>
             <CardTitle className="text-center text-2xl">Account Created!</CardTitle>
             <CardDescription className="text-center">
-              Your account is pending admin approval. You will be notified once approved.
+              Please check your email to verify your account. You will be redirected to login shortly.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button
-              className="w-full bg-chronos-teal hover:bg-chronos-teal/90"
-              onClick={() => navigate('/')}
+            <Button 
+              className="w-full bg-chronos-teal hover:bg-chronos-teal/90" 
+              onClick={() => navigate('/login')}
             >
-              Back to Home
+              Go to Login
             </Button>
           </CardContent>
         </Card>
@@ -206,79 +135,76 @@ export function RegisterPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {isLoading ? (
-               <div className="space-y-4">
-                 <Skeleton className="h-10 w-full" />
-                 <Skeleton className="h-10 w-full" />
-                 <Skeleton className="h-10 w-full" />
-                 <Skeleton className="h-10 w-full" />
-                 <Skeleton className="h-10 w-full" />
-               </div>
-            ) : (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white mt-2"
-                    disabled={isLoading}
-                  >
-                    Sign Up
-                  </Button>
-                </form>
-              </Form>
-            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="name@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white mt-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Sign Up'
+                  )}
+                </Button>
+              </form>
+            </Form>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Already have an account?{' '}
