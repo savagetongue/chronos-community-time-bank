@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTasks } from '@/hooks/use-tasks';
-import { SessionCard } from '@/components/session-card';
+import { ActiveTasks } from '@/pages/dashboard/active-tasks';
 import { NotificationCenter } from '@/components/admin/notification-center';
 export function DashboardHome() {
   const user = useAuthStore((s) => s.user);
@@ -57,7 +57,7 @@ export function DashboardHome() {
         animate="show"
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
       >
-        <motion.div variants={item}>
+        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
           <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Available Credits</CardTitle>
@@ -71,7 +71,7 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item}>
+        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
           <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
@@ -85,7 +85,7 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item}>
+        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
           <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reputation</CardTitle>
@@ -99,7 +99,7 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div variants={item}>
+        <motion.div variants={item} whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }}>
           <Card className="hover:shadow-glow transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
@@ -156,29 +156,7 @@ export function DashboardHome() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {tasksLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Skeleton className="h-48" />
-                <Skeleton className="h-48" />
-                <Skeleton className="h-48" />
-              </div>
-            ) : activeTasks && activeTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeTasks.map(task => (
-                  <SessionCard
-                    key={task.id}
-                    task={task}
-                    isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-secondary/20 rounded-lg border border-dashed">
-                <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No active tasks</h3>
-                <p className="text-muted-foreground mb-6">You haven't posted or accepted any tasks yet.</p>
-              </div>
-            )}
+            <ActiveTasks />
           </motion.div>
         </TabsContent>
         <TabsContent value="reviews">
