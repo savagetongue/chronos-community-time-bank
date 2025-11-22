@@ -44,12 +44,10 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 // Admin Guard
 export const AdminRoute = ({ children }: { children: JSX.Element }) => {
   const user = useAuthStore((s) => s.user);
-  const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  // In real app, check profile.is_admin. For demo, maybe allow all or specific email
-  // Assuming profile has is_admin from our updated types
-  if (!user || !profile?.is_admin) {
+  // Hardcoded admin check per client request
+  if (!user || user.email !== 'admin@gmail.com') {
     return <Navigate to="/dashboard" replace />;
   }
   return children;

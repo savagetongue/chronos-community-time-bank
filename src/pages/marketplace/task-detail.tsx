@@ -30,7 +30,7 @@ export function TaskDetail() {
     }
     if (!task) return;
     try {
-      await acceptTask.mutateAsync({ taskId: task.id, userId: user.id });
+      await acceptTask.mutateAsync({ taskId: task.id, userId: user.id, task });
       toast.success('Task accepted! Credits locked in escrow.');
     } catch (err) {
       console.error(err);
@@ -250,7 +250,7 @@ export function TaskDetail() {
               </div>
               {!isAccepted && !isCompleted ? (
                 <>
-                  <Button 
+                  <Button
                     className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white h-12 text-lg"
                     onClick={handleAccept}
                     disabled={isCreator || acceptTask.isPending}
@@ -300,7 +300,7 @@ export function TaskDetail() {
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Textarea 
+                      <Textarea
                         placeholder="Describe the issue in detail..."
                         value={disputeDetails}
                         onChange={(e) => setDisputeDetails(e.target.value)}

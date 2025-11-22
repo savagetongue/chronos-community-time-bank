@@ -64,7 +64,6 @@ export interface Profile {
   completed_tasks_count: number;
   is_approved: boolean;
   is_suspended: boolean;
-  is_admin?: boolean;
   kyc_level: number;
   created_at: string;
   updated_at: string;
@@ -81,7 +80,6 @@ export interface ProfileInsert {
   completed_tasks_count?: number | null;
   is_approved?: boolean | null;
   is_suspended?: boolean | null;
-  is_admin?: boolean | null;
   kyc_level?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
