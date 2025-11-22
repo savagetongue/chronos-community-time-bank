@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,11 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase, checkSupabaseEnv } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuthStore } from '@/store/auth-store';
-import { Profile } from '@/types/database';
+import { supabase } from '@/lib/supabase';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
@@ -30,9 +26,6 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const setSession = useAuthStore((s) => s.setSession);
-  const user = useAuthStore((s) => s.user);
-  const profile = useAuthStore((s) => s.profile);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -40,36 +33,9 @@ export function LoginPage() {
       password: '',
     },
   });
-  // Polling for admin approval if logged in but not approved
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (user && profile && !profile.is_approved) {
-      interval = setInterval(async () => {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        const freshProfile = data as Profile | null;
-        if (freshProfile && freshProfile.is_approved) {
-          toast.success('Your account has been approved!');
-          setSession(user, freshProfile);
-          navigate('/dashboard');
-          clearInterval(interval);
-        }
-      }, 30000); // Check every 30 seconds
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [user, profile, setSession, navigate]);
-  const onSubmit = useCallback(async (data: LoginFormValues) => {
+  async function onSubmit(data: LoginFormValues) {
     setIsLoading(true);
     setError(null);
-    // Check env vars
-    if (!checkSupabaseEnv()) {
-      toast.info('Sandbox: Using mock credentials. Real backend requires environment variables.');
-    }
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -81,24 +47,14 @@ export function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
-        // Map Supabase errors to user-friendly messages
-        const msg = err.message.toLowerCase();
-        if (msg.includes('invalid login credentials')) {
-          setError('Invalid email or password. Please try again.');
-        } else if (msg.includes('network') || msg.includes('fetch')) {
-          setError('Please configure your Supabase URL and key in environment variables to enable login.');
-        } else {
-          setError(err.message);
-        }
-        toast.error(err.message);
+        setError(err.message);
       } else {
         setError('An unknown error occurred');
-        toast.error('An unknown error occurred');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Left Side - Visual */}
@@ -137,51 +93,50 @@ export function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {isLoading ? (
-                <div className="space-y-6">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            ) : (
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                            <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <Button
-                    type="submit"
-                    className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white"
-                    disabled={isLoading}
-                    >
-                    Sign In
-                    </Button>
-                </form>
-                </Form>
-            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="name@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </form>
+            </Form>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Don't have an account?{' '}

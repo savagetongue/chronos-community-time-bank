@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Users, Shield, Globe, ArrowRight } from 'lucide-react';
+import { Clock, Users, Shield, Globe, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export function LandingPage() {
@@ -23,18 +23,24 @@ export function LandingPage() {
       <section className="relative pt-20 pb-32 md:pt-32 md:pb-48">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-chronos-teal/20 via-background to-background" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
+          <motion.div 
             initial="initial"
             animate="animate"
             variants={staggerChildren}
             className="text-center max-w-4xl mx-auto"
           >
+            <motion.div variants={fadeIn} className="flex justify-center mb-6">
+              <div className="inline-flex items-center rounded-full border border-chronos-teal/20 bg-chronos-teal/10 px-3 py-1 text-sm font-medium text-chronos-teal">
+                <Sparkles className="mr-2 h-3.5 w-3.5" />
+                Community-Powered Economy
+              </div>
+            </motion.div>
             <motion.h1 variants={fadeIn} className="text-5xl md:text-7xl font-display font-bold tracking-tight text-foreground mb-8 text-balance">
               Exchange <span className="text-chronos-teal">Time</span>,<br />
               Share <span className="text-chronos-amber">Skills</span>.
             </motion.h1>
             <motion.p variants={fadeIn} className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto text-pretty">
-              Chronos is a fair marketplace where your time equals credit.
+              Chronos is a fair marketplace where your time equals credit. 
               Help others, earn credits, and get the help you need—without spending a dime.
             </motion.p>
             <motion.div variants={fadeIn} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -57,7 +63,7 @@ export function LandingPage() {
       <section className="py-24 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -77,7 +83,7 @@ export function LandingPage() {
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -97,7 +103,7 @@ export function LandingPage() {
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
