@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase, checkSupabaseEnv } from '@/lib/supabase';
+import { supabase, supabaseAdmin, checkSupabaseEnv } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { ProfileInsert } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,6 +69,24 @@ export function RegisterPage() {
           .select('id')
           .eq('id', authData.user.id)
           .single();
+        // Admin Auto-Approval Logic
+        if (authData.user.email === 'admin@gmail.com') {
+          try {
+            const { error: adminUpdateError } = await supabaseAdmin
+              .from('profiles')
+              .update({ is_approved: true })
+              .eq('id', authData.user.id);
+            if (adminUpdateError) {
+              console.error('Admin auto-approval failed:', adminUpdateError);
+            } else {
+              toast.success('Admin account created and approved!');
+              navigate('/dashboard');
+              return; // Skip success screen
+            }
+          } catch (err) {
+            console.error('Admin auto-approval exception:', err);
+          }
+        }
         if (!existingProfile) {
           // Fallback: Create profile manually if trigger failed
           // Use Partial<ProfileInsert> with only core fields to avoid schema mismatch errors
@@ -84,8 +102,6 @@ export function RegisterPage() {
             is_suspended: false,
             kyc_level: 0,
             // Explicitly omit optional fields that might cause issues if schema is out of sync
-            // skills: [],
-            // bio: null
           };
           try {
             const { error: profileError } = await supabase
@@ -105,8 +121,8 @@ export function RegisterPage() {
         } else {
           toast.success('Account created! Profile setup via system trigger.');
         }
+        setSuccess(true);
       }
-      setSuccess(true);
     } catch (err) {
       if (err instanceof Error) {
         const msg = err.message.toLowerCase();
@@ -125,7 +141,7 @@ export function RegisterPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate]);
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
