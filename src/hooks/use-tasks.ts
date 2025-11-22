@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -136,14 +136,17 @@ export function useCreateTask() {
     mutationFn: async (newTask) => {
       const { data, error } = await supabase
         .from('tasks')
-        .insert(newTask as any)
+        .insert(newTask as Database['public']['Tables']['tasks']['Insert'])
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from task creation');
       return data as Task;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    onSuccess: (data) => {
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
     }
   });
 }
@@ -159,7 +162,7 @@ export function useAcceptTask() {
       // For now, we manually update the task status
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'accepted' } as any)
+        .update({ status: 'accepted' })
         .eq('id', taskId);
       if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
       // Return a mock escrow object
@@ -193,11 +196,12 @@ export function useUpdateTask() {
     mutationFn: async ({ id, updates }) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates as any)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from task update');
       return data as Task;
     },
     onSuccess: (data) => {
@@ -214,11 +218,12 @@ export function useCheckIn() {
     mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'in_progress' } as any)
+        .update({ status: 'in_progress' })
         .eq('id', taskId)
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from check-in');
       return data as Task;
     },
     onSuccess: (data) => {
@@ -235,11 +240,12 @@ export function useCompleteTask() {
     mutationFn: async (taskId) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ status: 'completed' } as any)
+        .update({ status: 'completed' })
         .eq('id', taskId)
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from completion');
       return data as Task;
     },
     onSuccess: (data) => {
@@ -256,10 +262,11 @@ export function useAddReview() {
     mutationFn: async (review) => {
       const { data, error } = await supabase
         .from('reviews')
-        .insert(review as any)
+        .insert(review as Database['public']['Tables']['reviews']['Insert'])
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from review submission');
       return data as Review;
     },
     onSuccess: () => {
@@ -272,16 +279,22 @@ export function useRaiseDispute() {
   const queryClient = useQueryClient();
   return useMutation<Dispute, Error, Partial<Dispute>>({
     mutationFn: async (dispute) => {
+      // Ensure evidence is an array if not provided
+      const disputeData = {
+        ...dispute,
+        evidence: dispute.evidence || []
+      };
       const { data, error } = await supabase
         .from('disputes')
-        .insert(dispute as any)
+        .insert(disputeData as Database['public']['Tables']['disputes']['Insert'])
         .select()
         .single();
       if (error) throw error;
+      if (!data) throw new Error('No data returned from dispute creation');
       if (dispute.escrow_id) {
         await supabase
           .from('escrows')
-          .update({ status: 'disputed', dispute_id: data.id } as any)
+          .update({ status: 'disputed', dispute_id: data.id })
           .eq('id', dispute.escrow_id);
       }
       return data as Dispute;
