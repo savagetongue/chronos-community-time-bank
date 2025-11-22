@@ -32,7 +32,7 @@ const taskSchema = z.object({
   type: z.enum(['offer', 'request']),
   title: z.string().min(5, 'Title must be at least 5 characters').max(100),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  estimated_credits: z.coerce.number().min(1).max(20),
+  estimated_credits: z.number().min(1).max(20),
   mode: z.enum(['online', 'in_person', 'hybrid']),
   location_city: z.string().optional(),
   online_platform: z.string().optional(),
@@ -205,7 +205,13 @@ export function TaskCreate() {
                         <FormItem>
                           <FormLabel>Estimated Credits (Hours)</FormLabel>
                           <FormControl>
-                            <Input type="number" min={1} max={20} {...field} />
+                            <Input 
+                              type="number" 
+                              min={1} 
+                              max={20} 
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
                           </FormControl>
                           <FormDescription>
                             1 Credit = 1 Hour of time.

@@ -62,14 +62,16 @@ export function RegisterPage() {
           id: authData.user.id,
           display_name: data.name,
           email: data.email,
-          is_approved: false, // Explicitly set to false
+          is_approved: false,
           credits: 0,
           locked_credits: 0,
           reputation_score: 0,
           completed_tasks_count: 0,
           kyc_level: 0,
-          skills: []
-        });
+          skills: [], // Explicit empty string array
+          bio: null,
+          is_suspended: false
+        } as any);
         if (profileError) {
           console.warn('Profile creation failed (might be handled by trigger):', profileError);
         }
@@ -129,7 +131,7 @@ export function RegisterPage() {
           <blockquote className="text-2xl font-medium text-white mb-6">
             "Community is much more than belonging to something; it's about doing something together that makes belonging matter."
           </blockquote>
-          <p className="text-white/80 font-medium">��� Brian Solis</p>
+          <p className="text-white/80 font-medium">— Brian Solis</p>
         </div>
         <div className="relative z-10 text-white/60 text-sm text-right">
           Join the movement.
