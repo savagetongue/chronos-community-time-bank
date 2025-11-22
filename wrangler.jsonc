@@ -4,7 +4,7 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "chronos-community-be1yspqu5oj0e0jxssrov",
+	"name": "communitytimebank",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
 	"assets": {
