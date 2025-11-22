@@ -89,7 +89,7 @@ export function TaskCreate() {
         location_lng: null,
         online_link: null,
         proposed_times: null,
-        confirmed_time: null,
+        // confirmed_time is omitted as it's not in CreateTaskInput
       });
       toast.success('Task created successfully!');
       navigate('/explore');

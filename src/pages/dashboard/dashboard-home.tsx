@@ -5,11 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ActiveTasks } from '@/pages/dashboard/active-tasks';
+import { useTasks } from '@/hooks/use-tasks';
+import { SessionCard } from '@/components/session-card';
 export function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
+  // Fetch active tasks for the dashboard
+  const { data: activeTasks, isLoading: tasksLoading } = useTasks(undefined, user?.id);
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -100,9 +103,9 @@ export function DashboardHome() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{activeTasks?.length || 0}</div>
               <p className="text-xs text-muted-foreground">
-                0 actions required
+                Actions required
               </p>
             </CardContent>
           </Card>
@@ -138,7 +141,28 @@ export function DashboardHome() {
           </div>
         </TabsContent>
         <TabsContent value="active">
-          <ActiveTasks />
+          {tasksLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="h-48" />
+              <Skeleton className="h-48" />
+            </div>
+          ) : activeTasks && activeTasks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeTasks.map(task => (
+                <SessionCard 
+                  key={task.id} 
+                  task={task} 
+                  isProvider={task.type === 'request' ? user?.id !== task.creator_id : user?.id === task.creator_id} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-secondary/20 rounded-lg border border-dashed">
+              <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">No active tasks</h3>
+              <p className="text-muted-foreground mb-6">You haven't posted or accepted any tasks yet.</p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

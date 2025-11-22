@@ -21,6 +21,7 @@ import { ExplorePage } from '@/pages/marketplace/explore-page';
 import { TaskCreate } from '@/pages/marketplace/task-create';
 import { TaskDetail } from '@/pages/marketplace/task-detail';
 import { ScheduleTask } from '@/pages/scheduling/schedule-task';
+import { SessionManagement } from '@/pages/dashboard/session-management';
 import { useAuthStore } from '@/store/auth-store';
 // Create a client
 const queryClient = new QueryClient({
@@ -31,8 +32,8 @@ const queryClient = new QueryClient({
     },
   },
 });
-// Protected Route Wrapper
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+// Protected Route Wrapper - Exported to satisfy lint rules about exports
+export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -67,6 +68,10 @@ const router = createBrowserRouter([
       {
         path: "/schedule/:id",
         element: <ProtectedRoute><ScheduleTask /></ProtectedRoute>,
+      },
+      {
+        path: "/session/:id",
+        element: <ProtectedRoute><SessionManagement /></ProtectedRoute>,
       },
       {
         path: "/about",

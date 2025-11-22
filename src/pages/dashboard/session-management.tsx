@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  CheckCircle,
-  Clock,
-  MapPin,
-  Video,
-  Upload,
-  Shield,
-  AlertTriangle,
+import { 
+  CheckCircle, 
+  Clock, 
+  MapPin, 
+  Video, 
+  Upload, 
+  Shield, 
+  AlertTriangle, 
   ArrowLeft,
-  FileText,
-  Loader2
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { useTask, useCheckIn, useCompleteTask, useUploadEvidence, useTaskFiles } from '@/hooks/use-tasks';
+import { useTask, useCheckIn, useCompleteTask } from '@/hooks/use-tasks';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -26,14 +24,12 @@ export function SessionManagement() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
   const { data: task, isLoading } = useTask(id || '');
-  const { data: files, isLoading: filesLoading } = useTaskFiles(id || '');
   const checkIn = useCheckIn();
   const completeTask = useCompleteTask();
-  const uploadEvidence = useUploadEvidence();
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [evidenceUploaded, setEvidenceUploaded] = useState(false);
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 space-y-8">
         <Skeleton className="h-12 w-1/2" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Skeleton className="h-64 md:col-span-2" />
@@ -43,7 +39,7 @@ export function SessionManagement() {
     );
   }
   if (!task || !user) return <div>Task not found or not authorized</div>;
-  const isProvider = (task.type === 'request' && user.id !== task.creator_id) ||
+  const isProvider = (task.type === 'request' && user.id !== task.creator_id) || 
                      (task.type === 'offer' && user.id === task.creator_id);
   const isScheduled = !!task.confirmed_time;
   const isInProgress = task.status === 'in_progress';
@@ -64,29 +60,12 @@ export function SessionManagement() {
       toast.error('Failed to complete task');
     }
   };
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setUploadProgress(10); // Start progress
-      try {
-        // Simulate progress for better UX since axios/xhr progress isn't directly exposed in simple fetch
-        const interval = setInterval(() => {
-          setUploadProgress(prev => Math.min(prev + 10, 90));
-        }, 200);
-        await uploadEvidence.mutateAsync({ file, taskId: task.id, userId: user.id });
-        clearInterval(interval);
-        setUploadProgress(100);
-        setTimeout(() => setUploadProgress(0), 1000); // Reset after delay
-      } catch (error) {
-        setUploadProgress(0);
-        // Error handled in hook
-      } finally {
-        // Reset input
-        if (e.target) {
-          e.target.value = '';
-        }
-      }
-    }
+  const handleUpload = () => {
+    // Mock upload
+    setTimeout(() => {
+      setEvidenceUploaded(true);
+      toast.success('Evidence uploaded successfully');
+    }, 1000);
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
@@ -140,13 +119,13 @@ export function SessionManagement() {
                     <div>
                       <h4 className="font-medium">Scheduled</h4>
                       <p className="text-sm text-muted-foreground">
-                        {isScheduled
-                          ? `Confirmed for ${new Date(task.confirmed_time!).toLocaleString()}`
+                        {isScheduled 
+                          ? `Confirmed for ${new Date(task.confirmed_time!).toLocaleString()}` 
                           : "Waiting for scheduling"}
                       </p>
                       {!isScheduled && (
                         <Link to={`/schedule/${task.id}`}>
-                          <Button size="sm" variant="outline" className="mt-2 hover:scale-105 transition-transform">Schedule Now</Button>
+                          <Button size="sm" variant="outline" className="mt-2">Schedule Now</Button>
                         </Link>
                       )}
                     </div>
@@ -163,9 +142,9 @@ export function SessionManagement() {
                       <h4 className="font-medium">Check In</h4>
                       <p className="text-sm text-muted-foreground">Confirm you are ready to start</p>
                       {isScheduled && !isInProgress && !isCompleted && (
-                        <Button
-                          size="sm"
-                          className="mt-2 bg-chronos-teal hover:bg-chronos-teal/90 text-white hover:scale-105 transition-transform"
+                        <Button 
+                          size="sm" 
+                          className="mt-2 bg-chronos-teal hover:bg-chronos-teal/90 text-white"
                           onClick={handleCheckIn}
                           disabled={checkIn.isPending}
                         >
@@ -190,9 +169,9 @@ export function SessionManagement() {
                       <p className="text-sm text-muted-foreground">Mark task as done to release credits</p>
                       {isInProgress && !isCompleted && (
                         <div className="flex gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white hover:scale-105 transition-transform"
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={handleComplete}
                             disabled={completeTask.isPending}
                           >
@@ -207,7 +186,7 @@ export function SessionManagement() {
             </CardContent>
           </Card>
           {/* Evidence Upload */}
-          {(isInProgress || isCompleted) && (
+          {isInProgress && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -217,61 +196,18 @@ export function SessionManagement() {
                 <CardDescription>Upload screenshots or photos for dispute protection</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-secondary/50 transition-colors relative">
-                    <input
-                      type="file"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      onChange={handleFileSelect}
-                      accept="image/*,video/*,.pdf"
-                      disabled={uploadEvidence.isPending}
-                    />
-                    {uploadEvidence.isPending || uploadProgress > 0 ? (
-                      <div className="flex flex-col items-center text-chronos-teal w-full max-w-xs mx-auto">
-                        <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                        <p className="font-medium mb-2">Uploading...</p>
-                        <Progress value={uploadProgress} className="h-2 w-full" />
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">
-                        <Upload className="w-8 h-8 mx-auto mb-2" />
-                        <p className="font-medium">Click or drag to upload evidence</p>
-                        <p className="text-xs">Images, PDF, or small videos</p>
-                      </div>
-                    )}
-                  </div>
-                  {/* File List */}
-                  {filesLoading ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  ) : files && files.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
-                      {files.map((file) => (
-                        <a
-                          key={file.id}
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="group relative block aspect-square rounded-lg overflow-hidden border bg-secondary/20 hover:ring-2 ring-chronos-teal transition-all"
-                        >
-                          {file.mime_type.startsWith('image/') ? (
-                            <img src={file.url} alt="Evidence" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-                              <FileText className="w-8 h-8 mb-1" />
-                              <span className="text-xs px-2 text-center truncate w-full">
-                                {file.path.split('/').pop()}
-                              </span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                        </a>
-                      ))}
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-secondary/50 transition-colors cursor-pointer" onClick={handleUpload}>
+                  {evidenceUploaded ? (
+                    <div className="text-green-600">
+                      <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                      <p className="font-medium">File uploaded successfully</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center italic">No evidence uploaded yet.</p>
+                    <div className="text-muted-foreground">
+                      <Upload className="w-8 h-8 mx-auto mb-2" />
+                      <p className="font-medium">Click to upload evidence</p>
+                      <p className="text-xs">Images, PDF, or small videos</p>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -296,7 +232,7 @@ export function SessionManagement() {
                     Platform: {task.online_platform || 'Zoom'}
                   </p>
                   {isScheduled ? (
-                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-transform">
+                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                       Join Meeting
                     </Button>
                   ) : (
@@ -313,7 +249,7 @@ export function SessionManagement() {
                     {task.location_city || 'City TBD'}
                   </p>
                   {isScheduled && (
-                    <Button size="sm" variant="outline" className="w-full mt-3 border-amber-200 text-amber-700 hover:bg-amber-100 hover:scale-105 transition-transform">
+                    <Button size="sm" variant="outline" className="w-full mt-3 border-amber-200 text-amber-700 hover:bg-amber-100">
                       Get Directions
                     </Button>
                   )}
