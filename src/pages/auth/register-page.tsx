@@ -224,9 +224,6 @@ export function RegisterPage() {
                 </Button>
               </form>
             </Form>
-            <div className="mt-4 p-3 bg-secondary/50 rounded text-xs text-muted-foreground">
-              Note: In sandbox mode, use mock credentials as Supabase is placeholder-configured. Admin approval simulated.
-            </div>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Already have an account?{' '}

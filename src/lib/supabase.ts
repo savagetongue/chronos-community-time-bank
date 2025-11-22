@@ -21,7 +21,8 @@ export const supabaseAdmin = createClient<Database>(supabaseServiceUrl, supabase
     storageKey: 'sb-admin-auth-token',
     autoRefreshToken: false,
     persistSession: false,
-    detectSessionInUrl: false
+    detectSessionInUrl: false,
+    flowType: 'pkce'
   }
 });
 // Helper to check env status
@@ -31,7 +32,7 @@ export const checkSupabaseEnv = () => {
   if (isPlaceholder) {
     toast.error('Supabase environment variables missing or invalid. App running in limited demo mode.');
   } else if (isAdminPlaceholder) {
-    console.warn('Admin service key is missing or placeholder. Admin operations may fail.');
+    console.warn('Admin operations limited: Configure SUPABASE_SERVICE_ROLE_KEY for full admin features.');
   }
   return !isPlaceholder;
 };
