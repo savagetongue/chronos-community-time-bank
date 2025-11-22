@@ -29,7 +29,6 @@ export function LandingPage() {
             variants={staggerChildren}
             className="text-center max-w-4xl mx-auto"
           >
-            {/* Badge removed as per client feedback */}
             <motion.h1 variants={fadeIn} className="text-5xl md:text-7xl font-display font-bold tracking-tight text-foreground mb-8 text-balance">
               Exchange <span className="text-chronos-teal">Time</span>,<br />
               Share <span className="text-chronos-amber">Skills</span>.

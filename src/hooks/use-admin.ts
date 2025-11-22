@@ -142,6 +142,17 @@ export function useResolveDispute() {
 }
 // --- Review Moderation ---
 export function useAdminReviews() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const channel = supabase.channel('admin-reviews')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'reviews'],
     queryFn: async () => {

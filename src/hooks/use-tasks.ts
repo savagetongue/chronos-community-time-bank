@@ -130,9 +130,14 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation<Task, Error, TaskInsert>({
     mutationFn: async (newTask) => {
+      const newTaskData: TaskInsert = {
+        ...newTask,
+        confirmed_time: null,
+        proposed_times: []
+      };
       const { data, error } = await supabase
         .from('tasks')
-        .insert(newTask)
+        .insert([newTaskData])
         .select()
         .single();
       if (error) throw error;
@@ -174,7 +179,7 @@ export function useAcceptTask() {
         dispute_id: null
       };
       // Try to insert real escrow
-      const { data, error } = await supabase.from('escrows').insert(escrowData).select().single();
+      const { data, error } = await supabase.from('escrows').insert([escrowData]).select().single();
       if (error) {
           console.warn('Escrow insert failed (likely RLS or missing task data), using mock', error);
           return {
@@ -267,9 +272,15 @@ export function useAddReview() {
   const queryClient = useQueryClient();
   return useMutation<Review, Error, ReviewInsert>({
     mutationFn: async (review) => {
+      const payload: ReviewInsert = {
+        ...review,
+        title: null,
+        reply_id: null,
+        is_hidden: false
+      };
       const { data, error } = await supabase
         .from('reviews')
-        .insert(review)
+        .insert([payload])
         .select()
         .single();
       if (error) throw error;
@@ -286,9 +297,16 @@ export function useRaiseDispute() {
   const queryClient = useQueryClient();
   return useMutation<Dispute, Error, DisputeInsert>({
     mutationFn: async (dispute) => {
+      const disputeData: DisputeInsert = {
+        ...dispute,
+        admin_decision: null,
+        admin_decision_payload: null,
+        deadline_at: null,
+        decided_at: null
+      };
       const { data, error } = await supabase
         .from('disputes')
-        .insert(dispute)
+        .insert([disputeData])
         .select()
         .single();
       if (error) throw error;
@@ -335,7 +353,7 @@ export function useUploadEvidence() {
       };
       const { data: fileData, error: dbError } = await supabase
         .from('files')
-        .insert(fileRecord)
+        .insert([fileRecord])
         .select()
         .single();
       if (dbError) throw dbError;
