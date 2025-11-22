@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database, FileRecord } from '@/types/database';
+import { Task, TaskType, TaskMode, Escrow, Review, Dispute, Database, FileRecord, TaskInsert, TaskUpdate, EscrowInsert, ReviewInsert, DisputeInsert, FileRecordInsert } from '@/types/database';
 import { subDays } from 'date-fns';
 import { toast } from 'sonner';
 export interface TaskFilters {
@@ -126,10 +126,9 @@ export function useTask(id: string) {
     enabled: !!id
   });
 }
-type CreateTaskInput = Database['public']['Tables']['tasks']['Insert'];
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  return useMutation<Task, Error, CreateTaskInput>({
+  return useMutation<Task, Error, TaskInsert>({
     mutationFn: async (newTask) => {
       const { data, error } = await supabase
         .from('tasks')
@@ -161,7 +160,7 @@ export function useAcceptTask() {
         .eq('id', taskId);
       if (updateError) console.warn('Mock update failed, proceeding with mock escrow');
       // Create a real escrow record if possible, otherwise mock
-      const escrowData: Database['public']['Tables']['escrows']['Insert'] = {
+      const escrowData: EscrowInsert = {
         task_id: taskId,
         requester_id: 'req-id', // Placeholder, ideally fetched from task
         provider_id: userId,
@@ -169,7 +168,10 @@ export function useAcceptTask() {
         credits_released: 0,
         status: 'locked',
         locked_at: new Date().toISOString(),
-        is_finalized: false
+        is_finalized: false,
+        auto_release_at: null,
+        released_at: null,
+        dispute_id: null
       };
       // Try to insert real escrow
       const { data, error } = await supabase.from('escrows').insert(escrowData).select().single();
@@ -179,9 +181,8 @@ export function useAcceptTask() {
             ...escrowData,
             id: `escrow-${Date.now()}`,
             created_at: new Date().toISOString(),
-            auto_release_at: null,
-            released_at: null,
-            dispute_id: null
+            requester_id: 'mock-req',
+            provider_id: userId
           } as Escrow;
       }
       return data as Escrow;
@@ -195,7 +196,7 @@ export function useAcceptTask() {
 }
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  return useMutation<Task, Error, { id: string; updates: Database['public']['Tables']['tasks']['Update'] }>({
+  return useMutation<Task, Error, { id: string; updates: TaskUpdate }>({
     mutationFn: async ({ id, updates }) => {
       if (!id) throw new Error('Task ID required');
       const { data, error } = await supabase
@@ -264,7 +265,7 @@ export function useCompleteTask() {
 }
 export function useAddReview() {
   const queryClient = useQueryClient();
-  return useMutation<Review, Error, Database['public']['Tables']['reviews']['Insert']>({
+  return useMutation<Review, Error, ReviewInsert>({
     mutationFn: async (review) => {
       const { data, error } = await supabase
         .from('reviews')
@@ -283,7 +284,7 @@ export function useAddReview() {
 }
 export function useRaiseDispute() {
   const queryClient = useQueryClient();
-  return useMutation<Dispute, Error, Database['public']['Tables']['disputes']['Insert']>({
+  return useMutation<Dispute, Error, DisputeInsert>({
     mutationFn: async (dispute) => {
       const { data, error } = await supabase
         .from('disputes')
@@ -322,7 +323,7 @@ export function useUploadEvidence() {
         .from('evidence')
         .getPublicUrl(uploadData.path);
       // 3. Insert into files table
-      const fileRecord: Database['public']['Tables']['files']['Insert'] = {
+      const fileRecord: FileRecordInsert = {
         owner_id: userId,
         bucket: 'evidence',
         path: uploadData.path,

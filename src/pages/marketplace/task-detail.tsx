@@ -48,6 +48,9 @@ export function TaskDetail() {
         comment: reviewComment,
         tags: [],
         is_anonymous: false,
+        title: null,
+        reply_id: null,
+        is_hidden: false
       });
     } catch (err) {
       console.error(err);
@@ -62,7 +65,11 @@ export function TaskDetail() {
         reason: disputeReason as any,
         details: disputeDetails,
         status: 'open',
-        evidence: []
+        evidence: [],
+        admin_decision: null,
+        admin_decision_payload: null,
+        deadline_at: null,
+        decided_at: null
       });
     } catch (err) {
       console.error(err);
@@ -197,15 +204,15 @@ export function TaskDetail() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star 
+                    <Star
                       key={star}
                       className={`h-6 w-6 cursor-pointer ${star <= reviewRating ? 'text-yellow-500 fill-yellow-500' : 'text-muted'}`}
                       onClick={() => setReviewRating(star)}
                     />
                   ))}
                 </div>
-                <Textarea 
-                  placeholder="Share your experience..." 
+                <Textarea
+                  placeholder="Share your experience..."
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
                 />
@@ -243,7 +250,7 @@ export function TaskDetail() {
               </div>
               {!isAccepted && !isCompleted ? (
                 <>
-                  <Button
+                  <Button 
                     className="w-full bg-chronos-teal hover:bg-chronos-teal/90 text-white h-12 text-lg"
                     onClick={handleAccept}
                     disabled={isCreator || acceptTask.isPending}
@@ -294,7 +301,7 @@ export function TaskDetail() {
                         </SelectContent>
                       </Select>
                       <Textarea 
-                        placeholder="Describe the issue in detail..." 
+                        placeholder="Describe the issue in detail..."
                         value={disputeDetails}
                         onChange={(e) => setDisputeDetails(e.target.value)}
                       />

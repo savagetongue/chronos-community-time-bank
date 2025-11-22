@@ -1,9 +1,21 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { Profile, Dispute, Review, Notification, Database } from '@/types/database';
+import { Profile, Dispute, Review, Notification } from '@/types/database';
 import { toast } from 'sonner';
 // --- User Management ---
 export function useUnapprovedUsers() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const channel = supabase.channel('admin-users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'users', 'unapproved'],
     queryFn: async () => {
@@ -23,7 +35,7 @@ export function useApproveUser() {
     mutationFn: async (userId: string) => {
       if (!userId) throw new Error('User ID required');
       try {
-        // Use admin client to bypass RLS if needed, or standard client if user is admin
+        // Use admin client to bypass RLS
         const { error } = await supabaseAdmin
           .from('profiles')
           .update({ is_approved: true })
@@ -70,10 +82,22 @@ export function useRejectUser() {
 }
 // --- Dispute Management ---
 export function useDisputes() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const channel = supabase.channel('admin-disputes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   return useQuery({
     queryKey: ['admin', 'disputes'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Use admin client to ensure we see ALL disputes regardless of RLS
+      const { data, error } = await supabaseAdmin
         .from('disputes')
         .select('*, escrows(*, tasks(*))')
         .order('created_at', { ascending: false });
